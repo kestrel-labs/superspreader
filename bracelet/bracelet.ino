@@ -20,8 +20,9 @@ Pranav Cherukupalli <cherukupallip@gmail.com>
 */
 
 #define uS_TO_S_FACTOR 1000000  /* Conversion factor for micro seconds to seconds */
-#define TIME_TO_SLEEP  5        /* Time ESP32 will go to sleep (in seconds) */
+#define TIME_TO_SLEEP  30        /* Time ESP32 will go to sleep (in seconds) */
 
+int const led_pin = 2;
 RTC_DATA_ATTR int bootCount = 0;
 
 /*
@@ -35,7 +36,13 @@ void print_wakeup_reason(){
 
   switch(wakeup_reason)
   {
-    case ESP_SLEEP_WAKEUP_EXT0 : Serial.println("Wakeup caused by external signal using RTC_IO"); break;
+    case ESP_SLEEP_WAKEUP_EXT0 :
+      Serial.println("Wakeup caused by external signal using RTC_IO");
+      digitalWrite(led_pin, HIGH);
+      delay(500);
+      digitalWrite(led_pin, LOW);
+      delay(500);
+      break;
     case ESP_SLEEP_WAKEUP_EXT1 : Serial.println("Wakeup caused by external signal using RTC_CNTL"); break;
     case ESP_SLEEP_WAKEUP_TIMER : Serial.println("Wakeup caused by timer"); break;
     case ESP_SLEEP_WAKEUP_TOUCHPAD : Serial.println("Wakeup caused by touchpad"); break;
@@ -45,6 +52,7 @@ void print_wakeup_reason(){
 }
 
 void setup(){
+  pinMode(led_pin, OUTPUT);
   Serial.begin(115200);
   delay(1000); //Take some time to open up the Serial Monitor
 
@@ -83,6 +91,7 @@ void setup(){
   sleep was started, it will sleep forever unless hardware
   reset occurs.
   */
+  esp_sleep_enable_ext0_wakeup(GPIO_NUM_33,1); //1 = High, 0 = Low
   Serial.println("Going to sleep now");
   delay(1000);
   Serial.flush(); 
