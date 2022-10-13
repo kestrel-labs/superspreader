@@ -29,7 +29,6 @@ services:
       - ${PWD}:${HOME}/ws/src/${REPO}
       - /tmp/.X11-unix:/tmp/.X11-unix:ro
       - ${XDG_RUNTIME_DIR}:${XDG_RUNTIME_DIR}:ro
-      - ~/.${REPO}/ccache:${HOME}/.ccache
       - /etc/passwd:/etc/passwd:ro
       - /etc/shadow:/etc/shadow:ro
     working_dir: ${HOME}/ws

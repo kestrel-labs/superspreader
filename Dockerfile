@@ -19,7 +19,15 @@ RUN --mount=type=cache,target=/var/cache/apt,id=apt \
         ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
+RUN python3 -m pip install --upgrade pip setuptools \
+    && python3 -m pip install pyserial
+
 RUN curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | BINDIR=/usr/local/bin sh
+
+RUN arduino-cli config init \
+    && arduino-cli config add board_manager.additional_urls https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json \
+    && arduino-cli core update-index \
+    && arduino-cli core install esp32:esp32
 
 # Build deployment image
 # ie install more dependencies and create our binary
@@ -34,15 +42,6 @@ WORKDIR /ws/src/${REPO}
 
 # build development environment
 FROM linting AS development
-
-ARG UID
-ARG GID
-ARG USER
-
-# fail early if args are missing
-RUN if [ -z "$USER" ]; then echo '\nERROR: USER not set. Run \n\n \texport USER=$(whoami) \n\n on host before building Dockerfile.\n'; exit 1; fi
-RUN if [ -z "$UID" ]; then echo '\nERROR: UID not set. Run \n\n \texport UID=$(id -u) \n\n on host before building Dockerfile.\n'; exit 1; fi
-RUN if [ -z "$GID" ]; then echo '\nERROR: GID not set. Run \n\n \texport GID=$(id -g) \n\n on host before building Dockerfile.\n'; exit 1; fi
 
 # install development tools
 RUN --mount=type=cache,target=/var/cache/apt,id=apt \
@@ -59,6 +58,15 @@ RUN --mount=type=cache,target=/var/cache/apt,id=apt \
          xterm \
     && rm -rf /var/lib/apt/lists/*
 
+ARG UID
+ARG GID
+ARG USER
+
+# fail early if args are missing
+RUN if [ -z "$USER" ]; then echo '\nERROR: USER not set. Run \n\n \texport USER=$(whoami) \n\n on host before building Dockerfile.\n'; exit 1; fi
+RUN if [ -z "$UID" ]; then echo '\nERROR: UID not set. Run \n\n \texport UID=$(id -u) \n\n on host before building Dockerfile.\n'; exit 1; fi
+RUN if [ -z "$GID" ]; then echo '\nERROR: GID not set. Run \n\n \texport GID=$(id -g) \n\n on host before building Dockerfile.\n'; exit 1; fi
+
 # add the user so conan installs in the correct home directory, even though
 # when we log into the container parts of this will be mapped over
 RUN groupadd --gid ${GID} ${USER} \
@@ -67,3 +75,9 @@ RUN groupadd --gid ${GID} ${USER} \
 WORKDIR /home/${USER}/ws
 RUN chown -R ${UID}:${GID} /home/${USER}
 USER ${USER}
+
+RUN arduino-cli config init \
+    && arduino-cli config add board_manager.additional_urls https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json \
+    && arduino-cli core update-index \
+    && arduino-cli core install esp32:esp32
+
