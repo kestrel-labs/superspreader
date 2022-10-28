@@ -16,7 +16,10 @@ constexpr auto SICK = "Sick";
 constexpr auto ZOMBIE = "Zombie";
 
 constexpr auto led_pin = 2;
-RTC_DATA_ATTR int bootCount = 0;
+constexpr auto enable_pin = 18;
+constexpr auto treatment_pin = 4;
+
+RTC_DATA_ATTR int boot_count = 0;
 RTC_DATA_ATTR unsigned int health = 40;
 
 bool is_monitor(std::string const& name)
@@ -126,33 +129,53 @@ unsigned int update_health(
     return current_health;
 }
 
-void setup()
-{
+void configure_hw() {
+    pinMode(enable_pin, INPUT);
+
     // start serial
     Serial.begin(115200);
+}
 
-    // Increment boot number and print it every reboot
-    ++bootCount;
-    Serial.println("Boot number: " + String(bootCount));
+bool is_monitor_enabled() {
+    return !digitalRead(enable_pin);
+}
 
-    // String representing our state (used by other devices to observe us)
-    auto const state = to_state(health);
-    Serial.println(state.c_str());
-    Serial.println("Health: " + String(health));
+void reset_state() {
+    boot_count = 0;
+    health = 0;
+}
 
-    // Start bluetooth to advertise our state
-    BLEDevice::init(PREFIX + state);
-    BLEDevice::startAdvertising();
+void setup()
+{
+    configure_hw();
 
-    // Scan for nearby devices and count infected
-    auto devices = scan_ble();
-    print_scan_results(devices);
-    auto const infected = count_infected(devices);
-    Serial.println("Infected count: " + String(infected));
+    if (!is_monitor_enabled()) {
+        Serial.println("Health Monitor disabled");
+        reset_state();
+    }
+    else {
+        // Increment boot number and print it every reboot
+        ++boot_count;
+        Serial.println("Boot number: " + String(boot_count));
 
-    // Update our health value
-    health = update_health(health, infected);
+        // String representing our state (used by other devices to observe us)
+        auto const state = to_state(health);
+        Serial.println(state.c_str());
+        Serial.println("Health: " + String(health));
 
+        // Start bluetooth to advertise our state
+        BLEDevice::init(PREFIX + state);
+        BLEDevice::startAdvertising();
+
+        // Scan for nearby devices and count infected
+        auto devices = scan_ble();
+        print_scan_results(devices);
+        auto const infected = count_infected(devices);
+        Serial.println("Infected count: " + String(infected));
+
+        // Update our health value
+        health = update_health(health, infected);
+    }
     // Flush the serial buffer
     Serial.flush();
 
