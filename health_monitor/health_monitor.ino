@@ -1,21 +1,21 @@
 #include <BLEDevice.h>
 #include <string>
 
-#define uS_TO_S_FACTOR 1000000 /* Conversion factor for micro seconds to seconds */
-#define TIME_TO_SLEEP 5        /* Time ESP32 will go to sleep (in seconds) */
-#define RSSI_LOWER_BOUND -100  // rssi less than this ignored
-#define SCAN_SECONDS 3
+constexpr auto uS_TO_S_FACTOR = 1000000; /* Conversion factor for micro seconds to seconds */
+constexpr auto TIME_TO_SLEEP = 5;        /* Time ESP32 will go to sleep (in seconds) */
+constexpr auto RSSI_LOWER_BOUND = -100;  // rssi less than this ignored
+constexpr auto SCAN_SECONDS = 3;
 
-#define PREFIX "Health Monitor - "
-#define CAT    "Zombie -1"
-#define IMMUNE "Immune"
-#define SUPER  "Super Healthy"
-#define HEALTY "Healthy"
-#define A_SYMPTOMATIC "Asymptomatic"
-#define SICK "Sick"
-#define ZOMBIE "Zombie"
+constexpr auto PREFIX = "Health Monitor - ";
+constexpr auto CAT =    "Zombie -1";
+constexpr auto IMMUNE = "Immune";
+constexpr auto SUPER  = "Super Healthy";
+constexpr auto HEALTY = "Healthy";
+constexpr auto A_SYMPTOMATIC = "Asymptomatic";
+constexpr auto SICK = "Sick";
+constexpr auto ZOMBIE = "Zombie";
 
-int const led_pin = 2;
+constexpr auto led_pin = 2;
 RTC_DATA_ATTR int bootCount = 0;
 RTC_DATA_ATTR unsigned int health = 40;
 
@@ -31,7 +31,7 @@ bool is_close(int rssi)
 
 bool is_infected(std::string const &name)
 {
-    auto state = name.substr(std::string(PREFIX).length());
+    auto const state = name.substr(std::string(PREFIX).length());
     return state == CAT
      || state == A_SYMPTOMATIC
      || state == SICK
@@ -54,8 +54,8 @@ unsigned int count_infected(BLEScanResults &results)
     for (auto i = 0; i < results.getCount(); ++i)
     {
         auto device = results.getDevice(i);
-        auto rssi = device.getRSSI();
-        auto name = device.getName();
+        auto const rssi = device.getRSSI();
+        auto const name = device.getName();
 
         if (is_monitor(name) && 
             is_close(rssi) && 
@@ -73,8 +73,8 @@ void print_scan_results(BLEScanResults &results)
     {
         auto device = results.getDevice(i);
         auto address = BLEAddress(device.getAddress());
-        auto rssi = device.getRSSI();
-        auto name = device.getName();
+        auto const rssi = device.getRSSI();
+        auto const name = device.getName();
 
         Serial.print("Addr: ");
         Serial.print(address.toString().c_str());
@@ -136,7 +136,7 @@ void setup()
     Serial.println("Boot number: " + String(bootCount));
 
     // String representing our state (used by other devices to observe us)
-    auto state = to_state(health);
+    auto const state = to_state(health);
     Serial.println(state.c_str());
     Serial.println("Health: " + String(health));
 
@@ -147,7 +147,7 @@ void setup()
     // Scan for nearby devices and count infected
     auto devices = scan_ble();
     print_scan_results(devices);
-    auto infected = count_infected(devices);
+    auto const infected = count_infected(devices);
     Serial.println("Infected count: " + String(infected));
 
     // Update our health value
@@ -157,6 +157,7 @@ void setup()
     Serial.flush();
 
     // Enable waking up in some amount of time and sleep
+    // Tests confirm that random does not produce the same number after reset
     esp_sleep_enable_timer_wakeup(random(1, TIME_TO_SLEEP) * uS_TO_S_FACTOR);
     esp_deep_sleep_start();
 }
