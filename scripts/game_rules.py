@@ -58,7 +58,7 @@ def health_count(health,exposures_human,exposures_cat):
     if is_immune(health):
         return State_bounds.IMMUNE
     health_current = health
-    health = health_current + progress(health_current) + exposure(health_current,exposures_human,exposures_cat)
+    health += progress(health_current) + exposure(health_current,exposures_human,exposures_cat)
     if is_zombie(health):
         return State_bounds.ZOMBIE
     return health
