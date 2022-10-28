@@ -15,12 +15,13 @@ RUN --mount=type=cache,target=/var/cache/apt,id=apt \
         cmake \
         lld \
         python3-pip \
+        python3-tk \
         mesa-utils \
         ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
 RUN python3 -m pip install --upgrade pip setuptools \
-    && python3 -m pip install pyserial
+    && python3 -m pip install pyserial 
 
 RUN curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | BINDIR=/usr/local/bin sh
 
@@ -28,6 +29,9 @@ RUN arduino-cli config init \
     && arduino-cli config add board_manager.additional_urls https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json \
     && arduino-cli core update-index \
     && arduino-cli core install esp32:esp32
+
+COPY ./scripts/requirements.txt .
+RUN pip install -r requirements.txt
 
 # Build deployment image
 # ie install more dependencies and create our binary
@@ -38,6 +42,8 @@ WORKDIR /ws
 # build arduino code
 
 FROM upstream AS linting
+RUN python3 -m pip install --upgrade pip setuptools \
+    && python3 -m pip install black
 WORKDIR /ws/src/${REPO}
 
 # build development environment
