@@ -15,12 +15,14 @@ constexpr auto A_SYMPTOMATIC = "Asymptomatic";
 constexpr auto SICK = "Sick";
 constexpr auto ZOMBIE = "Zombie";
 
-constexpr auto led_pin = 2;
+constexpr auto green_led_pin = 16;
+constexpr auto red_led_pin = 17;
 constexpr auto enable_pin = 18;
-constexpr auto treatment_pin = 4;
+constexpr auto treatment_pin = GPIO_NUM_4;
 
 RTC_DATA_ATTR int boot_count = 0;
 RTC_DATA_ATTR unsigned int health = 40;
+RTC_DATA_ATTR bool treated = false;
 
 bool is_monitor(std::string const& name)
 {
@@ -129,8 +131,18 @@ unsigned int update_health(
     return current_health;
 }
 
+void IRAM_ATTR receive_treatment() {
+    treated = true;
+    // treatment can only happen once per wakeup
+    detachInterrupt(treatment_pin);
+}
+
 void configure_hw() {
     pinMode(enable_pin, INPUT);
+    pinMode(green_led_pin, OUTPUT);
+    pinMode(red_led_pin, OUTPUT);
+    pinMode(treatment_pin, INPUT);
+    attachInterrupt(treatment_pin, receive_treatment, RISING);
 
     // start serial
     Serial.begin(115200);
@@ -145,6 +157,44 @@ void reset_state() {
     health = 0;
 }
 
+void print_wakeup_reason(){
+  auto const wakeup_reason = esp_sleep_get_wakeup_cause();
+
+  switch(wakeup_reason)
+  {
+    case ESP_SLEEP_WAKEUP_EXT0 :
+      Serial.println("Wakeup caused by external signal using RTC_IO");
+      treated = true;
+      break;
+    case ESP_SLEEP_WAKEUP_EXT1 : Serial.println("Wakeup caused by external signal using RTC_CNTL"); break;
+    case ESP_SLEEP_WAKEUP_TIMER : Serial.println("Wakeup caused by timer"); break;
+    case ESP_SLEEP_WAKEUP_TOUCHPAD : Serial.println("Wakeup caused by touchpad"); break;
+    case ESP_SLEEP_WAKEUP_ULP : Serial.println("Wakeup caused by ULP program"); break;
+    default : Serial.printf("Wakeup was not caused by deep sleep: %d\n",wakeup_reason); break;
+  }
+}
+
+void show_treatment_animation() {
+    // Two slow blinks
+    for (int n = 0; n < 2; ++n) {
+        digitalWrite(green_led_pin, HIGH);
+        digitalWrite(red_led_pin, HIGH);
+        delay(1000);
+        digitalWrite(green_led_pin, LOW);
+        digitalWrite(red_led_pin, LOW);
+        delay(1000);
+    }
+    // Eight fast blinks
+    for (int n = 0; n < 8; ++n) {
+        digitalWrite(green_led_pin, HIGH);
+        digitalWrite(red_led_pin, HIGH);
+        delay(100);
+        digitalWrite(green_led_pin, LOW);
+        digitalWrite(red_led_pin, LOW);
+        delay(100);
+    }
+}
+
 void setup()
 {
     configure_hw();
@@ -153,7 +203,13 @@ void setup()
         Serial.println("Health Monitor disabled");
         reset_state();
     }
+    else if (treated) {
+        Serial.println("Treatment received");
+        show_treatment_animation();
+        treated = false;
+    }
     else {
+        print_wakeup_reason();
         // Increment boot number and print it every reboot
         ++boot_count;
         Serial.println("Boot number: " + String(boot_count));
@@ -175,6 +231,7 @@ void setup()
 
         // Update our health value
         health = update_health(health, infected);
+
     }
     // Flush the serial buffer
     Serial.flush();
@@ -182,6 +239,8 @@ void setup()
     // Enable waking up in some amount of time and sleep
     // Tests confirm that random does not produce the same number after reset
     esp_sleep_enable_timer_wakeup(random(1, TIME_TO_SLEEP) * uS_TO_S_FACTOR);
+    // Wakeup when treatment pin goes high
+    esp_sleep_enable_ext0_wakeup(treatment_pin, 1);
     esp_deep_sleep_start();
 }
 
