@@ -39,12 +39,13 @@ enum struct StateBounds : health_t {
 
 enum struct ProgressRate : health_t {
     SUPER_HEALTHY = 2,
-    INFECTED = 6,
+    HEALTHY = 1,
+    INFECTED = 5,
 };
 
 enum struct InfectionRate : health_t {
-    CAT = 2,
-    HUMAN = 1,
+    CAT = 8,
+    HUMAN = 2,
 };
 
 health_t to_h(StateBounds bounds) {
@@ -114,14 +115,26 @@ health_t time_increase(health_t health) {
     return 0;
 }
 
+// Checks health status, returns a 0 or constant value to decrement h by to track disease progress
+health_t time_decrease(health_t health) {
+    if (is_healthy(health)) {
+        // Preview the result
+        auto const sum = health - to_h(ProgressRate::HEALTHY);
+        // If the result is too healthy, do nothing
+        return sum > to_h(StateBounds::HEALTHY) ? to_h(ProgressRate::HEALTHY) : 0;
+    }
+    return 0;
+}
+
 // takes current health state (count and cat resistance), count of humans and cats nearby
 HealthState health_update(HealthState health_state, Exposure exposures) {
     if (is_zombie(health_state.health))
         health_state.health = to_h(StateBounds::ZOMBIE);
     if (is_immune(health_state.health))
         health_state.health = to_h(StateBounds::IMMUNE); 
-    health_state.health = health_state.health + time_increase(health_state.health) + exposure_increase(health_state,exposures);
-    health_state.cat_resistance = is_infected(health_state.health);
+    health_state.health = health_state.health + time_increase(health_state.health) - time_decrease(health_state.health) + exposure_increase(health_state,exposures);
+    // Cat resistance is permanent
+    health_state.cat_resistance |= is_infected(health_state.health);
     if (is_zombie(health_state.health))
         health_state.health = to_h(StateBounds::ZOMBIE);
     return health_state;
@@ -341,6 +354,7 @@ void setup()
         auto const display_state = to_display_state(g_health_state.health);
         Serial.println(display_state.c_str());
         Serial.println("Health: " + String(g_health_state.health));
+        Serial.println("Cat Resistance: " + String(g_health_state.cat_resistance));
 
         // Start bluetooth to advertise our state
         BLEDevice::init(PREFIX_STR + display_state);
