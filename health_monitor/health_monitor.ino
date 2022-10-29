@@ -83,7 +83,7 @@ bool is_zombie(health_t health) {
 }
 
 struct HealthState {
-    health_t health = to_h(StateBounds::SUPER_HEALTHY);
+    health_t health = 2;  // super healthy
     bool cat_resistance = false;
 };
 
@@ -145,8 +145,7 @@ HealthState apply_treatment(HealthState health_state) {
 
 RTC_DATA_ATTR int g_boot_count = 0;
 RTC_DATA_ATTR bool g_treated = false;
-RTC_DATA_ATTR health_t g_health = 2;
-RTC_DATA_ATTR bool g_cat_resistance = false;
+RTC_DATA_ATTR HealthState g_health_state;
 
 //// Bluetooth ////////////////////////////////////////////////////
 
@@ -272,8 +271,8 @@ bool is_monitor_enabled() {
 
 void reset_state() {
     g_boot_count = 0;
-    g_health = 2;
-    g_cat_resistance = false;
+    g_health_state.health = 2;
+    g_health_state.cat_resistance = false;
 }
 
 void print_wakeup_reason(){
@@ -318,10 +317,7 @@ void setup()
 {
     configure_hw();
 
-    HealthState health_state;
-    health_state.health = g_health;
-    health_state.cat_resistance = g_cat_resistance;
-    Serial.println("Start Health: " + String(g_health));
+    Serial.println("Start Health: " + String(g_health_state.health));
 
     if (!is_monitor_enabled()) {
         Serial.println("Health Monitor disabled");
@@ -333,7 +329,7 @@ void setup()
         g_treated = false;
         
         // apply treatment to the game state
-        health_state = apply_treatment(health_state);
+        g_health_state = apply_treatment(g_health_state);
     }
     else {
         print_wakeup_reason();
@@ -342,9 +338,9 @@ void setup()
         Serial.println("Boot number: " + String(g_boot_count));
 
         // String representing our state (used by other devices to observe us)
-        auto const display_state = to_display_state(health_state.health);
+        auto const display_state = to_display_state(g_health_state.health);
         Serial.println(display_state.c_str());
-        Serial.println("Health: " + String(health_state.health));
+        Serial.println("Health: " + String(g_health_state.health));
 
         // Start bluetooth to advertise our state
         BLEDevice::init(PREFIX_STR + display_state);
@@ -358,14 +354,12 @@ void setup()
         Serial.println("Infected cat exposure: " + String(exposure.cat));
 
         // Update our health value
-        health_state = health_update(health_state, exposure);
+        g_health_state = health_update(g_health_state, exposure);
     }
     // Flush the serial buffer
     Serial.flush();
 
-    g_health = health_state.health;
-    g_cat_resistance = health_state.cat_resistance;
-    Serial.println("End Health: " + String(g_health));
+    Serial.println("End Health: " + String(g_health_state.health));
 
     // Enable waking up in some amount of time and sleep
     // Tests confirm that random does not produce the same number after reset
