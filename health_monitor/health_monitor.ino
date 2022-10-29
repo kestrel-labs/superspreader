@@ -7,7 +7,7 @@ constexpr auto TIME_TO_SLEEP = 5;        /* Time ESP32 will go to sleep (in seco
 constexpr auto RSSI_LOWER_BOUND = -80;   // rssi less than this ignored
 constexpr auto SCAN_SECONDS = 3;
 
-constexpr auto PREFIX_STR = "Health Monitor - ";
+constexpr auto PREFIX_STR = "HM - ";
 constexpr auto CAT_STR =    "Zombie -1";
 constexpr auto IMMUNE_STR = "Immune";
 constexpr auto SUPER_STR  = "Super Healthy";

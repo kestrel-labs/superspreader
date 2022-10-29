@@ -6,7 +6,7 @@
 #define RSSI_LOWER_BOUND -100  // rssi less than this ignored
 #define ALIVE_SECONDS 2
 
-#define NAME "Health Monitor - Zombie -1"
+#define NAME "HM - Zombie -1"
 
 int const led_pin = 2;
 RTC_DATA_ATTR int bootCount = 0;
