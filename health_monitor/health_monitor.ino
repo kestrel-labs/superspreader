@@ -186,6 +186,8 @@ BLEScanResults scan_ble()
 Exposure count_exposure(BLEScanResults &results)
 {
     Exposure exposure;
+    exposure.human = 0;
+    exposure.cat = 0;
     for (auto i = 0; i < results.getCount(); ++i)
     {
         auto device = results.getDevice(i);
