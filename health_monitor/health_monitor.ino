@@ -147,6 +147,8 @@ HealthState apply_treatment(HealthState health_state) {
 RTC_DATA_ATTR int g_boot_count = 0;
 RTC_DATA_ATTR bool g_treated = false;
 RTC_DATA_ATTR struct HealthState g_health_state;
+RTC_DATA_ATTR health_t g_health = to_h(StateBounds::SUPER_HEALTHY);
+RTC_DATA_ATTR bool g_cat_resistance = false;
 
 //// Bluetooth ////////////////////////////////////////////////////
 
@@ -318,6 +320,9 @@ void setup()
 {
     configure_hw();
 
+    g_health_state.health = g_health;
+    g_health_state.cat_resistance = g_cat_resistance;
+
     if (!is_monitor_enabled()) {
         Serial.println("Health Monitor disabled");
         reset_state();
@@ -357,6 +362,9 @@ void setup()
     }
     // Flush the serial buffer
     Serial.flush();
+
+    g_health = g_health_state.health;
+    g_cat_resistance = g_health_state.cat_resistance;
 
     // Enable waking up in some amount of time and sleep
     // Tests confirm that random does not produce the same number after reset
