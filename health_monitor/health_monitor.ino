@@ -4,7 +4,7 @@
 
 constexpr auto uS_TO_S_FACTOR = 1000000; /* Conversion factor for micro seconds to seconds */
 constexpr auto TIME_TO_SLEEP = 5;        /* Time ESP32 will go to sleep (in seconds) */
-constexpr auto RSSI_LOWER_BOUND = -80;   // rssi less than this ignored
+constexpr auto RSSI_LOWER_BOUND = -77;   // rssi less than this ignored
 constexpr auto SCAN_SECONDS = 3;
 
 constexpr auto PREFIX_STR        = "HM - ";
