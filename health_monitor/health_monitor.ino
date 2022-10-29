@@ -144,10 +144,10 @@ HealthState apply_treatment(HealthState health_state) {
 
 //// Game State ///////////////////////////////////////////////////
 
-RTC_DATA_ATTR static int g_boot_count = 0;
-RTC_DATA_ATTR static bool g_treated = false;
-RTC_DATA_ATTR static health_t g_health = 2;
-RTC_DATA_ATTR static bool g_cat_resistance = false;
+RTC_DATA_ATTR int g_boot_count = 0;
+RTC_DATA_ATTR bool g_treated = false;
+RTC_DATA_ATTR health_t g_health = 2;
+RTC_DATA_ATTR bool g_cat_resistance = false;
 
 //// Bluetooth ////////////////////////////////////////////////////
 
