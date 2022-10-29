@@ -2,11 +2,9 @@
 #include <string>
 #include <cmath>
 
-// TODO: test lower rssi values, -100 is going to capture everything!!
-
 constexpr auto uS_TO_S_FACTOR = 1000000; /* Conversion factor for micro seconds to seconds */
 constexpr auto TIME_TO_SLEEP = 5;        /* Time ESP32 will go to sleep (in seconds) */
-constexpr auto RSSI_LOWER_BOUND = -100;  // rssi less than this ignored
+constexpr auto RSSI_LOWER_BOUND = -80;   // rssi less than this ignored
 constexpr auto SCAN_SECONDS = 3;
 
 constexpr auto PREFIX = "Health Monitor - ";
@@ -130,11 +128,25 @@ HealthState health_update(HealthState health_state, Exposure exposures) {
     return health_state;
 }
 
+HealthState apply_treatment(HealthState health_state) {
+    if (is_infected_sym_late(health_state.health)) {
+        health_state.health = to_h(StateBounds::IMMUNE);
+    } else if (is_infected_sym(health_state.health)) {
+        health_state.health = to_h(StateBounds::HEALTHY);
+    } else if (is_infected_asym(health_state.health)) {
+        health_state.health -= 35; // sometimes you go healthy, other times super 
+    } else if (is_healthy(health_state.health)) {
+        health_state.health = to_h(StateBounds::SUPER_HEALTHY);
+    }
+
+    return health_state;
+}
+
 //// Game State ///////////////////////////////////////////////////
 
-RTC_DATA_ATTR int boot_count = 0;
-RTC_DATA_ATTR bool treated = false;
-RTC_DATA_ATTR struct HealthState health_state;
+RTC_DATA_ATTR int g_boot_count = 0;
+RTC_DATA_ATTR bool g_treated = false;
+RTC_DATA_ATTR struct HealthState g_health_state;
 
 //// Bluetooth ////////////////////////////////////////////////////
 
@@ -171,9 +183,9 @@ BLEScanResults scan_ble()
     return scan->getResults();
 }
 
-struct Exposure count_exposure(BLEScanResults &results)
+Exposure count_exposure(BLEScanResults &results)
 {
-    struct Exposure exposure;
+    Exposure exposure;
     for (auto i = 0; i < results.getCount(); ++i)
     {
         auto device = results.getDevice(i);
@@ -236,7 +248,7 @@ std::string to_display_state(health_t health) {
 }
 
 void IRAM_ATTR receive_treatment() {
-    treated = true;
+    g_treated = true;
     // treatment can only happen once per wakeup
     detachInterrupt(treatment_pin);
 }
@@ -257,9 +269,9 @@ bool is_monitor_enabled() {
 }
 
 void reset_state() {
-    boot_count = 0;
-    health_state.health = to_h(StateBounds::SUPER_HEALTHY);
-    health_state.cat_resistance = false;
+    g_boot_count = 0;
+    g_health_state.health = to_h(StateBounds::SUPER_HEALTHY);
+    g_health_state.cat_resistance = false;
 }
 
 void print_wakeup_reason(){
@@ -269,7 +281,7 @@ void print_wakeup_reason(){
   {
     case ESP_SLEEP_WAKEUP_EXT0 :
       Serial.println("Wakeup caused by external signal using RTC_IO");
-      treated = true;
+      g_treated = true;
       break;
     case ESP_SLEEP_WAKEUP_EXT1 : Serial.println("Wakeup caused by external signal using RTC_CNTL"); break;
     case ESP_SLEEP_WAKEUP_TIMER : Serial.println("Wakeup caused by timer"); break;
@@ -308,23 +320,24 @@ void setup()
         Serial.println("Health Monitor disabled");
         reset_state();
     }
-    else if (treated) {
+    else if (g_treated) {
         Serial.println("Treatment received");
         show_treatment_animation();
-        treated = false;
-
-        // TODO: affect health_state with treatment ???
+        g_treated = false;
+        
+        // apply treatment to the game state
+        g_health_state = apply_treatment(g_health_state);
     }
     else {
         print_wakeup_reason();
         // Increment boot number and print it every reboot
-        ++boot_count;
-        Serial.println("Boot number: " + String(boot_count));
+        ++g_boot_count;
+        Serial.println("Boot number: " + String(g_boot_count));
 
         // String representing our state (used by other devices to observe us)
-        auto const display_state = to_display_state(health_state.health);
+        auto const display_state = to_display_state(g_health_state.health);
         Serial.println(display_state.c_str());
-        Serial.println("Health: " + String(health_state.health));
+        Serial.println("Health: " + String(g_health_state.health));
 
         // Start bluetooth to advertise our state
         BLEDevice::init(PREFIX + display_state);
@@ -338,7 +351,7 @@ void setup()
         Serial.println("Infected cat exposure: " + String(exposure.cat));
 
         // Update our health value
-        health_state = health_update(health_state, exposure);
+        g_health_state = health_update(g_health_state, exposure);
     }
     // Flush the serial buffer
     Serial.flush();
