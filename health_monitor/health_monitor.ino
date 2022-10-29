@@ -7,14 +7,14 @@ constexpr auto TIME_TO_SLEEP = 5;        /* Time ESP32 will go to sleep (in seco
 constexpr auto RSSI_LOWER_BOUND = -80;   // rssi less than this ignored
 constexpr auto SCAN_SECONDS = 3;
 
-constexpr auto PREFIX = "Health Monitor - ";
-constexpr auto CAT =    "Zombie -1";
-constexpr auto IMMUNE = "Immune";
-constexpr auto SUPER  = "Super Healthy";
-constexpr auto HEALTY = "Healthy";
-constexpr auto A_SYMPTOMATIC = "Asymptomatic";
-constexpr auto SICK = "Sick";
-constexpr auto ZOMBIE = "Zombie";
+constexpr auto PREFIX_STR = "Health Monitor - ";
+constexpr auto CAT_STR =    "Zombie -1";
+constexpr auto IMMUNE_STR = "Immune";
+constexpr auto SUPER_STR  = "Super Healthy";
+constexpr auto HEALTY_STR = "Healthy";
+constexpr auto A_SYMPTOMATIC_STR = "Asymptomatic";
+constexpr auto SICK_STR = "Sick";
+constexpr auto ZOMBIE_STR = "Zombie";
 
 constexpr auto green_led_pin = 16;
 constexpr auto red_led_pin = 17;
@@ -152,7 +152,7 @@ RTC_DATA_ATTR struct HealthState g_health_state;
 
 bool is_monitor(std::string const& name)
 {
-    return name.rfind(PREFIX, 0) == 0;
+    return name.rfind(PREFIX_STR, 0) == 0;
 }
 
 bool is_close(int rssi)
@@ -160,17 +160,17 @@ bool is_close(int rssi)
     return rssi >= RSSI_LOWER_BOUND;
 }
 
-bool is_infected_human(std::string const &name)
+bool is_infected_human(std::string const& name)
 {
-    auto const state = name.substr(std::string(PREFIX).length());
-    return state == A_SYMPTOMATIC
-     || state == SICK
-     || state == ZOMBIE;
+    auto const state = name.substr(std::string(PREFIX_STR).length());
+    return state == A_SYMPTOMATIC_STR
+     || state == SICK_STR
+     || state == ZOMBIE_STR;
 }
 bool is_cat(std::string const &name)
 {
-    auto const state = name.substr(std::string(PREFIX).length());
-    return state == CAT;
+    auto const state = name.substr(std::string(PREFIX_STR).length());
+    return state == CAT_STR;
 }
 
 BLEScanResults scan_ble()
@@ -228,25 +228,25 @@ void print_scan_results(BLEScanResults &results)
 std::string to_display_state(health_t health) {
     if (is_immune(health))
     {
-        return IMMUNE;
+        return IMMUNE_STR;
     }
     else if (is_super_healthy(health))
     {
-        return SUPER;
+        return SUPER_STR;
     }
     else if (is_healthy(health))
     {
-        return HEALTY;
+        return HEALTY_STR;
     }
     else if (is_infected_asym(health))
     {
-        return A_SYMPTOMATIC;
+        return A_SYMPTOMATIC_STR;
     }
     else if (is_infected(health))
     {
-        return SICK;
+        return SICK_STR;
     }
-    return ZOMBIE;
+    return ZOMBIE_STR;
 }
 
 void IRAM_ATTR receive_treatment() {
@@ -342,7 +342,7 @@ void setup()
         Serial.println("Health: " + String(g_health_state.health));
 
         // Start bluetooth to advertise our state
-        BLEDevice::init(PREFIX + display_state);
+        BLEDevice::init(PREFIX_STR + display_state);
         BLEDevice::startAdvertising();
 
         // Scan for nearby devices and count infected
