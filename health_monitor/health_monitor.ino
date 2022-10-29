@@ -268,12 +268,49 @@ void IRAM_ATTR receive_treatment() {
     detachInterrupt(treatment_pin);
 }
 
+hw_timer_t *led_timer = NULL;
+
+uint64_t get_blink_period(health_t health) {
+    if (is_infected_sym(health))
+    {
+        return 1.5e6;
+    }
+    else if (is_infected_sym_late(health))
+    {
+        return 1e5;
+    }
+    return 1e9;
+}
+
+void IRAM_ATTR on_timer(){
+    digitalWrite(red_led_pin, !digitalRead(red_led_pin));
+}
+
+void configure_led_timer(uint64_t period_us) {
+    led_timer = timerBegin(0, 80, true);
+    timerAttachInterrupt(led_timer, &on_timer, true);
+    // wait time in microseconds
+    timerAlarmWrite(led_timer, period_us, true);
+    timerAlarmEnable(led_timer); //Just Enable
+}
+
 void configure_hw() {
     pinMode(enable_pin, INPUT);
     pinMode(green_led_pin, OUTPUT);
     pinMode(red_led_pin, OUTPUT);
     pinMode(treatment_pin, INPUT);
     attachInterrupt(treatment_pin, receive_treatment, RISING);
+
+    if (is_immune(g_health_state.health)) {
+        digitalWrite(green_led_pin, HIGH);
+    }
+    else if (is_zombie(g_health_state.health)) {
+        digitalWrite(red_led_pin, HIGH);
+    }
+    else if (is_infected(g_health_state.health)) {
+        auto const period = get_blink_period(g_health_state.health);
+        configure_led_timer(period);
+    }
 
     // start serial
     Serial.begin(115200);
