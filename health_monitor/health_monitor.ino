@@ -66,9 +66,8 @@ bool is_super_healthy(health_t health) {
 bool is_healthy(health_t health) {
     return to_h(StateBounds::HEALTHY) <= health && health < to_h(StateBounds::INFECTED_ASYM);
 }
-bool is_infected(health_t health) { 
-    // Covers all infected states before ZOMBIE
-    return to_h(StateBounds::INFECTED_ASYM) <= health;
+bool is_infected(health_t health) {
+    return to_h(StateBounds::INFECTED_ASYM) <= health && health < to_h(StateBounds::ZOMBIE);
 }
 bool is_infected_asym(health_t health) {
     return to_h(StateBounds::INFECTED_ASYM) <= health && health < to_h(StateBounds::INFECTED_SYM);
