@@ -45,7 +45,7 @@ enum struct ProgressRate : health_t {
 
 enum struct InfectionRate : health_t {
     CAT = 8,
-    HUMAN = 2,
+    HUMAN = 3,
 };
 
 health_t to_h(StateBounds bounds) {
@@ -84,6 +84,7 @@ bool is_zombie(health_t health) {
 }
 
 struct HealthState {
+    // using a function resets the value after every boot
     health_t health = 2;  // super healthy
     bool cat_resistance = false;
 };
