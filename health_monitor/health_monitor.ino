@@ -1,32 +1,157 @@
 #include <BLEDevice.h>
 #include <string>
+#include <cmath>
 
 constexpr auto uS_TO_S_FACTOR = 1000000; /* Conversion factor for micro seconds to seconds */
 constexpr auto TIME_TO_SLEEP = 5;        /* Time ESP32 will go to sleep (in seconds) */
-constexpr auto RSSI_LOWER_BOUND = -100;  // rssi less than this ignored
+constexpr auto RSSI_LOWER_BOUND = -77;   // rssi less than this ignored
 constexpr auto SCAN_SECONDS = 3;
 
-constexpr auto PREFIX = "Health Monitor - ";
-constexpr auto CAT =    "Zombie -1";
-constexpr auto IMMUNE = "Immune";
-constexpr auto SUPER  = "Super Healthy";
-constexpr auto HEALTY = "Healthy";
-constexpr auto A_SYMPTOMATIC = "Asymptomatic";
-constexpr auto SICK = "Sick";
-constexpr auto ZOMBIE = "Zombie";
+constexpr auto PREFIX_STR        = "HM - ";
+constexpr auto CAT_STR           = "Zombie -1";
+constexpr auto IMMUNE_STR        = "Immune";
+constexpr auto SUPER_STR         = "Super Healthy";
+constexpr auto HEALTY_STR        = "Healthy";
+constexpr auto A_SYMPTOMATIC_STR = "Asymptomatic";
+constexpr auto SICK_STR          = "Sick";
+constexpr auto ZOMBIE_STR        = "Zombie";
 
 constexpr auto green_led_pin = 16;
 constexpr auto red_led_pin = 17;
 constexpr auto enable_pin = 18;
 constexpr auto treatment_pin = GPIO_NUM_4;
 
-RTC_DATA_ATTR int boot_count = 0;
-RTC_DATA_ATTR unsigned int health = 40;
-RTC_DATA_ATTR bool treated = false;
+//// From game_rules_2.py //////////////////////////////////////////
+
+// health is tracked with an unsigned int
+using health_t = unsigned int;
+
+// these are the bounds of the different types of health
+enum struct StateBounds : health_t {
+    IMMUNE = 1,
+    SUPER_HEALTHY = 2,
+    HEALTHY = 10,
+    INFECTED_ASYM = 40,
+    INFECTED_SYM = 70,
+    INFECTED_SYM_LATE = 90,
+    ZOMBIE = 99,
+};
+
+enum struct ProgressRate : health_t {
+    SUPER_HEALTHY = 2,
+    INFECTED = 6,
+};
+
+enum struct InfectionRate : health_t {
+    CAT = 2,
+    HUMAN = 1,
+};
+
+health_t to_h(StateBounds bounds) {
+    return static_cast<health_t>(bounds);
+}
+health_t to_h(ProgressRate rate) {
+    return static_cast<health_t>(rate);
+}
+health_t to_h(InfectionRate rate) {
+    return static_cast<health_t>(rate);
+}
+
+bool is_immune(health_t health) {
+    return health <= to_h(StateBounds::IMMUNE);
+}
+bool is_super_healthy(health_t health) {
+    return to_h(StateBounds::SUPER_HEALTHY) <= health && health < to_h(StateBounds::HEALTHY);
+}
+bool is_healthy(health_t health) {
+    return to_h(StateBounds::HEALTHY) <= health && health < to_h(StateBounds::INFECTED_ASYM);
+}
+bool is_infected(health_t health) {
+    return to_h(StateBounds::INFECTED_ASYM) <= health && health < to_h(StateBounds::ZOMBIE);
+}
+bool is_infected_asym(health_t health) {
+    return to_h(StateBounds::INFECTED_ASYM) <= health && health < to_h(StateBounds::INFECTED_SYM);
+}
+bool is_infected_sym(health_t health) {
+    return to_h(StateBounds::INFECTED_SYM) <= health && health < to_h(StateBounds::INFECTED_SYM_LATE);
+}
+bool is_infected_sym_late(health_t health) {
+    return to_h(StateBounds::INFECTED_SYM_LATE) <= health && health < to_h(StateBounds::ZOMBIE);
+}
+bool is_zombie(health_t health) {
+    return to_h(StateBounds::ZOMBIE) <= health;
+}
+
+struct HealthState {
+    health_t health = 2;  // super healthy
+    bool cat_resistance = false;
+};
+
+struct Exposure {
+    health_t human = 0;
+    health_t cat = 0;
+};
+
+health_t exposure_increase(struct HealthState health_state, struct Exposure exposures) {
+    if (is_immune(health_state.health) || is_infected(health_state.health))
+        return 0;
+ 
+    // resistant to cats when cat_resistance = 1
+    return exposures.human*to_h(InfectionRate::HUMAN) 
+        + exposures.cat*to_h(InfectionRate::CAT)*(health_state.cat_resistance ? 0 : 1);
+}
+
+// Checks health status, returns a 0 or constant value to increment h by to track disease progress
+health_t time_increase(health_t health) {
+    if (is_super_healthy(health)) {
+        auto const sum = health + to_h(ProgressRate::SUPER_HEALTHY);
+        auto const remainder = sum % to_h(StateBounds::HEALTHY);
+        auto const quotient = std::floor(sum / to_h(StateBounds::HEALTHY));
+        return to_h(ProgressRate::SUPER_HEALTHY) - remainder*quotient;
+    }
+    if (is_infected(health))
+        return to_h(ProgressRate::INFECTED);
+    return 0;
+}
+
+// takes current health state (count and cat resistance), count of humans and cats nearby
+HealthState health_update(HealthState health_state, Exposure exposures) {
+    if (is_zombie(health_state.health))
+        health_state.health = to_h(StateBounds::ZOMBIE);
+    if (is_immune(health_state.health))
+        health_state.health = to_h(StateBounds::IMMUNE); 
+    health_state.health = health_state.health + time_increase(health_state.health) + exposure_increase(health_state,exposures);
+    health_state.cat_resistance = is_infected(health_state.health);
+    if (is_zombie(health_state.health))
+        health_state.health = to_h(StateBounds::ZOMBIE);
+    return health_state;
+}
+
+HealthState apply_treatment(HealthState health_state) {
+    if (is_infected_sym_late(health_state.health)) {
+        health_state.health = to_h(StateBounds::IMMUNE);
+    } else if (is_infected_sym(health_state.health)) {
+        health_state.health = to_h(StateBounds::HEALTHY);
+    } else if (is_infected_asym(health_state.health)) {
+        health_state.health -= 35; // sometimes you go healthy, other times super 
+    } else if (is_healthy(health_state.health)) {
+        health_state.health = to_h(StateBounds::SUPER_HEALTHY);
+    }
+
+    return health_state;
+}
+
+//// Game State ///////////////////////////////////////////////////
+
+RTC_DATA_ATTR int g_boot_count = 0;
+RTC_DATA_ATTR bool g_treated = false;
+RTC_DATA_ATTR HealthState g_health_state;
+
+//// Bluetooth ////////////////////////////////////////////////////
 
 bool is_monitor(std::string const& name)
 {
-    return name.rfind(PREFIX, 0) == 0;
+    return name.rfind(PREFIX_STR, 0) == 0;
 }
 
 bool is_close(int rssi)
@@ -34,13 +159,17 @@ bool is_close(int rssi)
     return rssi >= RSSI_LOWER_BOUND;
 }
 
-bool is_infected(std::string const &name)
+bool is_infected_human(std::string const& name)
 {
-    auto const state = name.substr(std::string(PREFIX).length());
-    return state == CAT
-     || state == A_SYMPTOMATIC
-     || state == SICK
-     || state == ZOMBIE;
+    auto const state = name.substr(std::string(PREFIX_STR).length());
+    return state == A_SYMPTOMATIC_STR
+     || state == SICK_STR
+     || state == ZOMBIE_STR;
+}
+bool is_cat(std::string const &name)
+{
+    auto const state = name.substr(std::string(PREFIX_STR).length());
+    return state == CAT_STR;
 }
 
 BLEScanResults scan_ble()
@@ -53,22 +182,25 @@ BLEScanResults scan_ble()
     return scan->getResults();
 }
 
-unsigned int count_infected(BLEScanResults &results)
+Exposure count_exposure(BLEScanResults &results)
 {
-    unsigned int infected = 0;
+    Exposure exposure;
+    exposure.human = 0;
+    exposure.cat = 0;
     for (auto i = 0; i < results.getCount(); ++i)
     {
         auto device = results.getDevice(i);
         auto const rssi = device.getRSSI();
         auto const name = device.getName();
 
-        if (is_monitor(name) && 
-            is_close(rssi) && 
-            is_infected(name)) {
-            ++infected;
+        if (is_monitor(name) && is_close(rssi)) {
+            if (is_infected_human(name))
+                exposure.human += 1;
+            if (is_cat(name))
+                exposure.cat += 1;
         }
     }
-    return infected;
+    return exposure;
 }
 
 void print_scan_results(BLEScanResults &results)
@@ -92,47 +224,32 @@ void print_scan_results(BLEScanResults &results)
     Serial.println("---");
 }
 
-std::string to_state(unsigned int health) {
-    if (health == 0)
+std::string to_display_state(health_t health) {
+    if (is_immune(health))
     {
-        return IMMUNE;
+        return IMMUNE_STR;
     }
-    else if (health < 10)
+    else if (is_super_healthy(health))
     {
-        return SUPER;
+        return SUPER_STR;
     }
-    else if (health < 50)
+    else if (is_healthy(health))
     {
-        return HEALTY;
+        return HEALTY_STR;
     }
-    else if (health < 60)
+    else if (is_infected_asym(health))
     {
-        return A_SYMPTOMATIC;
+        return A_SYMPTOMATIC_STR;
     }
-    else if (health < 99)
+    else if (is_infected(health))
     {
-        return SICK;
+        return SICK_STR;
     }
-    return ZOMBIE;
-}
-
-unsigned int update_health(
-    unsigned int current_health,
-    unsigned int infected)
-{
-    if (health == 0 || health == 100) {
-        return current_health;
-    }
-
-    if (infected > 0) {
-        return current_health + 1;
-    }
-
-    return current_health;
+    return ZOMBIE_STR;
 }
 
 void IRAM_ATTR receive_treatment() {
-    treated = true;
+    g_treated = true;
     // treatment can only happen once per wakeup
     detachInterrupt(treatment_pin);
 }
@@ -153,8 +270,9 @@ bool is_monitor_enabled() {
 }
 
 void reset_state() {
-    boot_count = 0;
-    health = 0;
+    g_boot_count = 0;
+    g_health_state.health = 2;
+    g_health_state.cat_resistance = false;
 }
 
 void print_wakeup_reason(){
@@ -164,7 +282,7 @@ void print_wakeup_reason(){
   {
     case ESP_SLEEP_WAKEUP_EXT0 :
       Serial.println("Wakeup caused by external signal using RTC_IO");
-      treated = true;
+      g_treated = true;
       break;
     case ESP_SLEEP_WAKEUP_EXT1 : Serial.println("Wakeup caused by external signal using RTC_CNTL"); break;
     case ESP_SLEEP_WAKEUP_TIMER : Serial.println("Wakeup caused by timer"); break;
@@ -199,42 +317,49 @@ void setup()
 {
     configure_hw();
 
+    Serial.println("Start Health: " + String(g_health_state.health));
+
     if (!is_monitor_enabled()) {
         Serial.println("Health Monitor disabled");
         reset_state();
     }
-    else if (treated) {
+    else if (g_treated) {
         Serial.println("Treatment received");
         show_treatment_animation();
-        treated = false;
+        g_treated = false;
+        
+        // apply treatment to the game state
+        g_health_state = apply_treatment(g_health_state);
     }
     else {
         print_wakeup_reason();
         // Increment boot number and print it every reboot
-        ++boot_count;
-        Serial.println("Boot number: " + String(boot_count));
+        ++g_boot_count;
+        Serial.println("Boot number: " + String(g_boot_count));
 
         // String representing our state (used by other devices to observe us)
-        auto const state = to_state(health);
-        Serial.println(state.c_str());
-        Serial.println("Health: " + String(health));
+        auto const display_state = to_display_state(g_health_state.health);
+        Serial.println(display_state.c_str());
+        Serial.println("Health: " + String(g_health_state.health));
 
         // Start bluetooth to advertise our state
-        BLEDevice::init(PREFIX + state);
+        BLEDevice::init(PREFIX_STR + display_state);
         BLEDevice::startAdvertising();
 
         // Scan for nearby devices and count infected
         auto devices = scan_ble();
         print_scan_results(devices);
-        auto const infected = count_infected(devices);
-        Serial.println("Infected count: " + String(infected));
+        auto const exposure = count_exposure(devices);
+        Serial.println("Infected human exposure: " + String(exposure.human));
+        Serial.println("Infected cat exposure: " + String(exposure.cat));
 
         // Update our health value
-        health = update_health(health, infected);
-
+        g_health_state = health_update(g_health_state, exposure);
     }
     // Flush the serial buffer
     Serial.flush();
+
+    Serial.println("End Health: " + String(g_health_state.health));
 
     // Enable waking up in some amount of time and sleep
     // Tests confirm that random does not produce the same number after reset
