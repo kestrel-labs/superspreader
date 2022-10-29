@@ -146,7 +146,7 @@ HealthState apply_treatment(HealthState health_state) {
 
 RTC_DATA_ATTR static int g_boot_count = 0;
 RTC_DATA_ATTR static bool g_treated = false;
-RTC_DATA_ATTR static health_t g_health = to_h(StateBounds::SUPER_HEALTHY);
+RTC_DATA_ATTR static health_t g_health = 2;
 RTC_DATA_ATTR static bool g_cat_resistance = false;
 
 //// Bluetooth ////////////////////////////////////////////////////
