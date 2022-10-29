@@ -39,12 +39,13 @@ enum struct StateBounds : health_t {
 
 enum struct ProgressRate : health_t {
     SUPER_HEALTHY = 2,
-    INFECTED = 6,
+    HEALTHY = 1,
+    INFECTED = 1,
 };
 
 enum struct InfectionRate : health_t {
-    CAT = 2,
-    HUMAN = 1,
+    CAT = 8,
+    HUMAN = 3,
 };
 
 health_t to_h(StateBounds bounds) {
@@ -83,6 +84,7 @@ bool is_zombie(health_t health) {
 }
 
 struct HealthState {
+    // using a function resets the value after every boot
     health_t health = 2;  // super healthy
     bool cat_resistance = false;
 };
@@ -114,14 +116,26 @@ health_t time_increase(health_t health) {
     return 0;
 }
 
+// Checks health status, returns a 0 or constant value to decrement h by to track disease progress
+health_t time_decrease(health_t health) {
+    if (is_healthy(health)) {
+        // Preview the result
+        auto const sum = health - to_h(ProgressRate::HEALTHY);
+        // If the result is too healthy, do nothing
+        return sum > to_h(StateBounds::HEALTHY) ? to_h(ProgressRate::HEALTHY) : 0;
+    }
+    return 0;
+}
+
 // takes current health state (count and cat resistance), count of humans and cats nearby
 HealthState health_update(HealthState health_state, Exposure exposures) {
     if (is_zombie(health_state.health))
         health_state.health = to_h(StateBounds::ZOMBIE);
     if (is_immune(health_state.health))
         health_state.health = to_h(StateBounds::IMMUNE); 
-    health_state.health = health_state.health + time_increase(health_state.health) + exposure_increase(health_state,exposures);
-    health_state.cat_resistance = is_infected(health_state.health);
+    health_state.health = health_state.health + time_increase(health_state.health) - time_decrease(health_state.health) + exposure_increase(health_state,exposures);
+    // Cat resistance is permanent
+    health_state.cat_resistance |= is_infected(health_state.health);
     if (is_zombie(health_state.health))
         health_state.health = to_h(StateBounds::ZOMBIE);
     return health_state;
@@ -254,12 +268,49 @@ void IRAM_ATTR receive_treatment() {
     detachInterrupt(treatment_pin);
 }
 
+hw_timer_t *led_timer = NULL;
+
+uint64_t get_blink_period(health_t health) {
+    if (is_infected_sym(health))
+    {
+        return 1.5e6;
+    }
+    else if (is_infected_sym_late(health))
+    {
+        return 1e5;
+    }
+    return 1e9;
+}
+
+void IRAM_ATTR on_timer(){
+    digitalWrite(red_led_pin, !digitalRead(red_led_pin));
+}
+
+void configure_led_timer(uint64_t period_us) {
+    led_timer = timerBegin(0, 80, true);
+    timerAttachInterrupt(led_timer, &on_timer, true);
+    // wait time in microseconds
+    timerAlarmWrite(led_timer, period_us, true);
+    timerAlarmEnable(led_timer); //Just Enable
+}
+
 void configure_hw() {
     pinMode(enable_pin, INPUT);
     pinMode(green_led_pin, OUTPUT);
     pinMode(red_led_pin, OUTPUT);
     pinMode(treatment_pin, INPUT);
     attachInterrupt(treatment_pin, receive_treatment, RISING);
+
+    if (is_immune(g_health_state.health)) {
+        digitalWrite(green_led_pin, HIGH);
+    }
+    else if (is_zombie(g_health_state.health)) {
+        digitalWrite(red_led_pin, HIGH);
+    }
+    else if (is_infected(g_health_state.health)) {
+        auto const period = get_blink_period(g_health_state.health);
+        configure_led_timer(period);
+    }
 
     // start serial
     Serial.begin(115200);
@@ -341,6 +392,7 @@ void setup()
         auto const display_state = to_display_state(g_health_state.health);
         Serial.println(display_state.c_str());
         Serial.println("Health: " + String(g_health_state.health));
+        Serial.println("Cat Resistance: " + String(g_health_state.cat_resistance));
 
         // Start bluetooth to advertise our state
         BLEDevice::init(PREFIX_STR + display_state);
