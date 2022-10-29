@@ -146,7 +146,6 @@ HealthState apply_treatment(HealthState health_state) {
 
 RTC_DATA_ATTR static int g_boot_count = 0;
 RTC_DATA_ATTR static bool g_treated = false;
-RTC_DATA_ATTR static struct HealthState g_health_state;
 RTC_DATA_ATTR static health_t g_health = to_h(StateBounds::SUPER_HEALTHY);
 RTC_DATA_ATTR static bool g_cat_resistance = false;
 
@@ -274,8 +273,8 @@ bool is_monitor_enabled() {
 
 void reset_state() {
     g_boot_count = 0;
-    g_health_state.health = to_h(StateBounds::SUPER_HEALTHY);
-    g_health_state.cat_resistance = false;
+    g_health = to_h(StateBounds::SUPER_HEALTHY);
+    g_cat_resistance = false;
 }
 
 void print_wakeup_reason(){
@@ -320,8 +319,9 @@ void setup()
 {
     configure_hw();
 
-    g_health_state.health = g_health;
-    g_health_state.cat_resistance = g_cat_resistance;
+    HealthState health_state;
+    health_state.health = g_health;
+    health_state.cat_resistance = g_cat_resistance;
 
     if (!is_monitor_enabled()) {
         Serial.println("Health Monitor disabled");
@@ -333,7 +333,7 @@ void setup()
         g_treated = false;
         
         // apply treatment to the game state
-        g_health_state = apply_treatment(g_health_state);
+        health_state = apply_treatment(health_state);
     }
     else {
         print_wakeup_reason();
@@ -342,9 +342,9 @@ void setup()
         Serial.println("Boot number: " + String(g_boot_count));
 
         // String representing our state (used by other devices to observe us)
-        auto const display_state = to_display_state(g_health_state.health);
+        auto const display_state = to_display_state(health_state.health);
         Serial.println(display_state.c_str());
-        Serial.println("Health: " + String(g_health_state.health));
+        Serial.println("Health: " + String(health_state.health));
 
         // Start bluetooth to advertise our state
         BLEDevice::init(PREFIX_STR + display_state);
@@ -358,13 +358,13 @@ void setup()
         Serial.println("Infected cat exposure: " + String(exposure.cat));
 
         // Update our health value
-        g_health_state = health_update(g_health_state, exposure);
+        health_state = health_update(health_state, exposure);
     }
     // Flush the serial buffer
     Serial.flush();
 
-    g_health = g_health_state.health;
-    g_cat_resistance = g_health_state.cat_resistance;
+    g_health = health_state.health;
+    g_cat_resistance = health_state.cat_resistance;
 
     // Enable waking up in some amount of time and sleep
     // Tests confirm that random does not produce the same number after reset
