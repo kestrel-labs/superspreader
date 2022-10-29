@@ -40,7 +40,7 @@ enum struct StateBounds : health_t {
 enum struct ProgressRate : health_t {
     SUPER_HEALTHY = 2,
     HEALTHY = 1,
-    INFECTED = 5,
+    INFECTED = 1,
 };
 
 enum struct InfectionRate : health_t {
