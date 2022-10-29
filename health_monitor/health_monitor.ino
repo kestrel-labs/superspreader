@@ -322,6 +322,7 @@ void setup()
     HealthState health_state;
     health_state.health = g_health;
     health_state.cat_resistance = g_cat_resistance;
+    Serial.println("Start Health: " + String(g_health));
 
     if (!is_monitor_enabled()) {
         Serial.println("Health Monitor disabled");
@@ -365,6 +366,7 @@ void setup()
 
     g_health = health_state.health;
     g_cat_resistance = health_state.cat_resistance;
+    Serial.println("End Health: " + String(g_health));
 
     // Enable waking up in some amount of time and sleep
     // Tests confirm that random does not produce the same number after reset
