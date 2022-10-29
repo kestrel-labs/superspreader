@@ -7,14 +7,14 @@ constexpr auto TIME_TO_SLEEP = 5;        /* Time ESP32 will go to sleep (in seco
 constexpr auto RSSI_LOWER_BOUND = -80;   // rssi less than this ignored
 constexpr auto SCAN_SECONDS = 3;
 
-constexpr auto PREFIX_STR = "HM - ";
-constexpr auto CAT_STR =    "Zombie -1";
-constexpr auto IMMUNE_STR = "Immune";
-constexpr auto SUPER_STR  = "Super Healthy";
-constexpr auto HEALTY_STR = "Healthy";
+constexpr auto PREFIX_STR        = "HM - ";
+constexpr auto CAT_STR           = "Zombie -1";
+constexpr auto IMMUNE_STR        = "Immune";
+constexpr auto SUPER_STR         = "Super Healthy";
+constexpr auto HEALTY_STR        = "Healthy";
 constexpr auto A_SYMPTOMATIC_STR = "Asymptomatic";
-constexpr auto SICK_STR = "Sick";
-constexpr auto ZOMBIE_STR = "Zombie";
+constexpr auto SICK_STR          = "Sick";
+constexpr auto ZOMBIE_STR        = "Zombie";
 
 constexpr auto green_led_pin = 16;
 constexpr auto red_led_pin = 17;
