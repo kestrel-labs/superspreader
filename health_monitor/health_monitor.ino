@@ -272,7 +272,7 @@ bool is_monitor_enabled() {
 
 void reset_state() {
     g_boot_count = 0;
-    g_health = to_h(StateBounds::SUPER_HEALTHY);
+    g_health = 2;
     g_cat_resistance = false;
 }
 
