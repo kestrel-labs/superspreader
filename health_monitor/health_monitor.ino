@@ -320,16 +320,14 @@ void setup()
                 return next_event;
             },
             // on exposure
-            [](const PlayerState& player, const ExposureEvent& exposure)
+            [](const ExposureEvent& exposure)
             {
-                (void)player;
                 (void)exposure;
                 Serial.println("Player exposed to virus");
             },
             // on treatment
-            [](const PlayerState& player, const TreatmentEvent& treatment)
+            [](const TreatmentEvent& treatment)
             {
-                (void)player;
                 (void)treatment;
                 Serial.println("Player administered treatment");
 

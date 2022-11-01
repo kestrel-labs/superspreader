@@ -173,7 +173,7 @@ void game_update(struct PlayerState& player,
                 player.health = exposure_update(player.health, exposure);
 
                 // Call any context-specific callbacks
-                on_exposure(player, exposure);
+                on_exposure(exposure);
             },
             [&on_treatment, &player, &treatment_previously_received](const TreatmentEvent& treatment)
             {
@@ -189,7 +189,7 @@ void game_update(struct PlayerState& player,
                 treatment_previously_received = true;
 
                 // Call any context-specific callbacks
-                on_treatment(player, treatment);
+                on_treatment(treatment);
             }
         );
     }
