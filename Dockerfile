@@ -10,18 +10,19 @@ RUN --mount=type=cache,target=/var/cache/apt,id=apt \
     apt update \
     && apt upgrade -y \
     && apt install -q -y --no-install-recommends \
-        build-essential \
-        curl \
-        cmake \
-        lld \
-        python3-pip \
-        python3-tk \
-        mesa-utils \
-        ffmpeg \
+    build-essential \
+    clang-format-14 \
+    cmake \
+    curl \
+    ffmpeg \
+    lld \
+    mesa-utils \
+    python3-pip \
+    python3-tk \
     && rm -rf /var/lib/apt/lists/*
 
 RUN python3 -m pip install --upgrade pip setuptools \
-    && python3 -m pip install pyserial 
+    && python3 -m pip install pyserial
 
 RUN curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | BINDIR=/usr/local/bin sh
 
@@ -43,7 +44,7 @@ WORKDIR /ws
 
 FROM upstream AS linting
 RUN python3 -m pip install --upgrade pip setuptools \
-    && python3 -m pip install black
+    && python3 -m pip install black pre-commit
 WORKDIR /ws/src/${REPO}
 
 # build development environment
@@ -53,15 +54,15 @@ FROM linting AS development
 RUN --mount=type=cache,target=/var/cache/apt,id=apt \
     apt update \
     && apt install -q -y --no-install-recommends \
-         bash-completion \
-         ccache \
-         gdb \
-         git \
-         ssh-client \
-         sudo \
-         tmux \
-         vim \
-         xterm \
+    bash-completion \
+    ccache \
+    gdb \
+    git \
+    ssh-client \
+    sudo \
+    tmux \
+    vim \
+    xterm \
     && rm -rf /var/lib/apt/lists/*
 
 ARG UID
@@ -86,4 +87,3 @@ RUN arduino-cli config init \
     && arduino-cli config add board_manager.additional_urls https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json \
     && arduino-cli core update-index \
     && arduino-cli core install esp32:esp32
-
