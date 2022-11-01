@@ -95,9 +95,8 @@ struct TreatmentEvent {};
 struct Event {
     enum class Type {
         NIL = 0,
-        UNKNOWN = 1,
-        EXPOSURE = 2,
-        TREATMENT = 3,
+        EXPOSURE = 1,
+        TREATMENT = 2,
     };
 
     Type type;
