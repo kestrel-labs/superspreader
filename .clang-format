@@ -1,0 +1,23 @@
+BasedOnStyle:  Google
+
+ColumnLimit: 100
+IndentWidth: 4
+
+BinPackArguments: false
+BinPackParameters: false
+AllowAllArgumentsOnNextLine: false
+AllowAllParametersOfDeclarationOnNextLine: false
+AlignConsecutiveAssignments: true
+
+DerivePointerAlignment: false
+QualifierAlignment: Right
+ReferenceAlignment: Pointer
+SpaceAroundPointerQualifiers: Default
+PointerAlignment: Left
+
+IncludeBlocks: Regroup
+IncludeCategories:
+  - Priority: 1
+    Regex: '^<(.+).hpp>$'
+  - Priority: 2
+    Regex: '^<(.+)>$'

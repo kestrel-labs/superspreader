@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Input Parameters
 from random import randrange
 import matplotlib.pyplot as plt

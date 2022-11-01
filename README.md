@@ -11,10 +11,10 @@ Start an interactive development container
 ```shell
 docker compose -f compose.dev.yml run development
 ```
-
+Build and upload the health monitor:
 ```shell
-username@superspreader-dev:~/ws arduino-cli compile --fqbn esp32:esp32:esp32 src/superspreader/ble_test/ble_test.ino
-username@superspreader-dev:~/ws arduino-cli upload -p /dev/ttyUSB0 --fqbn esp32:esp32:esp32 src/superspreader/ble_test/ble_test.ino
+username@superspreader-dev:~/ws arduino-cli compile --fqbn esp32:esp32:esp32 src/superspreader/arduino/health_monitor
+username@superspreader-dev:~/ws arduino-cli upload -p /dev/ttyUSB0 --fqbn esp32:esp32:esp32 src/superspreader/arduino/health_monitor
 username@superspreader-dev:~/ws arduino-cli monitor -p /dev/ttyUSB0 -c baudrate=115200
 ```
 

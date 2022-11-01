@@ -8,11 +8,10 @@
 
 #define NAME "HM - Zombie -1"
 
-int const led_pin = 2;
+int const led_pin           = 2;
 RTC_DATA_ATTR int bootCount = 0;
 
-void setup()
-{
+void setup() {
     Serial.begin(115200);
 
     // Increment boot number and print it every reboot
@@ -30,7 +29,6 @@ void setup()
     esp_deep_sleep_start();
 }
 
-void loop()
-{
+void loop() {
     // This is not going to be called
 }
