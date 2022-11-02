@@ -41,6 +41,8 @@ FROM upstream AS deployment
 # everything will build together
 WORKDIR /ws
 # build arduino code
+COPY ./arduino .
+RUN arduino-cli compile --fqbn esp32:esp32:esp32 health_monitor 
 
 FROM upstream AS linting
 RUN python3 -m pip install --upgrade pip setuptools \
