@@ -1,6 +1,6 @@
 ## Description
 
-Resolves sc-story-id
+Resolves #issue-number
 
 Please include a brief description of the change.
 
