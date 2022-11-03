@@ -42,7 +42,7 @@ jobs:
           build-args: REPO=superspreader
           push: true
           target: upstream
-          tags: ghcr.io/griswaldbrooks/superspreader:upstream
+          tags: ghcr.io/kestrel-labs/superspreader:upstream
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -87,7 +87,7 @@ jobs:
           context: .
           push: true
           target: deployment
-          tags: ghcr.io/griswaldbrooks/superspreader:deployment-${{ env.DEPLOY_TAG }}
+          tags: ghcr.io/kestrel-labs/superspreader:deployment-${{ env.DEPLOY_TAG }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -132,7 +132,7 @@ jobs:
           context: .
           push: true
           target: linting
-          tags: ghcr.io/griswaldbrooks/superspreader:linting-${{ env.DEPLOY_TAG }}
+          tags: ghcr.io/kestrel-labs/superspreader:linting-${{ env.DEPLOY_TAG }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -181,6 +181,6 @@ jobs:
             GID=1000
           push: true
           target: development
-          tags: ghcr.io/griswaldbrooks/superspreader:development-${{ env.DEPLOY_TAG }}
+          tags: ghcr.io/kestrel-labs/superspreader:development-${{ env.DEPLOY_TAG }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
