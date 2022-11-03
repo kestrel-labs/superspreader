@@ -49,6 +49,7 @@ RUN arduino-cli compile --fqbn esp32:esp32:esp32 arduino/health_monitor
 
 # build, format, and test rust code
 WORKDIR /ws/ss-sim
+ENV PATH="/root/.cargo/bin:${PATH}"
 RUN cargo build
 RUN cargo fmt --check
 RUN cargo test
