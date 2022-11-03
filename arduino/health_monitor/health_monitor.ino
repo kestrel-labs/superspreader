@@ -1,8 +1,8 @@
 #include <BLEDevice.h>
 #include <cmath>
-#include <vector>
 
 #include "health_monitor_core.h"
+#include "static_ring_buffer.h"
 
 namespace globals {
 
@@ -164,7 +164,8 @@ void configure_hw(const struct PlayerState& player) {
 
 bool is_monitor_enabled() { return !digitalRead(enable_pin); }
 
-void poll_wakeup_events(std::vector<Event>& event_queue) {
+template <std::size_t N>
+void poll_wakeup_events(static_ring_buffer<Event, N>& event_queue) {
     auto const wakeup_reason = esp_sleep_get_wakeup_cause();
 
     switch (wakeup_reason) {
@@ -196,7 +197,8 @@ void poll_wakeup_events(std::vector<Event>& event_queue) {
     }
 }
 
-void poll_bt_events(std::vector<Event>& event_queue) {
+template <std::size_t N>
+void poll_bt_events(static_ring_buffer<Event, N>& event_queue) {
     // Scan for nearby devices and count infected
     auto devices = scan_ble();
     print_scan_results(devices);
@@ -252,8 +254,7 @@ void setup() {
         BLEDevice::startAdvertising();
 
         // Event queue will hold semi-dynamic events to process on this tick
-        std::vector<Event> event_queue;
-        event_queue.reserve(3UL);
+        static_ring_buffer<Event, 4> event_queue;
 
         // Get any events caused by device wakeup events
         poll_wakeup_events(event_queue);
@@ -273,8 +274,8 @@ void setup() {
 
                 Event next_event;  // null state
                 if (!event_queue.empty()) {
-                    next_event = event_queue.back();
-                    event_queue.pop_back();
+                    next_event = event_queue.front();
+                    event_queue.front();
                 }
 
                 return next_event;
