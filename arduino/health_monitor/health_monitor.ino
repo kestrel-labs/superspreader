@@ -1,21 +1,20 @@
-// Compile with
-//
-// arduino-cli compile --fqbn esp32:esp32:esp32 src/superspreader/health_monitor/
-//
-
 #include <BLEDevice.h>
 #include <cmath>
 #include <vector>
 
 #include "health_monitor_core.h"
 
+namespace globals {
+
 //// Persistent State ///////////////////////////////////////////////////
 
-RTC_DATA_ATTR PlayerState g_player_state_persistent;
+RTC_DATA_ATTR PlayerState player_state_persistent;
 
 //// Temporary State ////////////////////////////////////////////////////
 
-static bool g_treament_received_interrupt_fired = false;
+bool treament_received_interrupt_fired = false;
+
+}  // namespace globals
 
 //// Device stuff ///////////////////////////////////////////////////////
 
@@ -117,7 +116,7 @@ std::string to_display_state(health_t health) {
 }
 
 void IRAM_ATTR receive_treatment() {
-    g_treament_received_interrupt_fired = true;
+    globals::treament_received_interrupt_fired = true;
     // treatment can only happen once per wakeup
     detachInterrupt(treatment_pin);
 }
@@ -233,20 +232,20 @@ void show_treatment_animation() {
 }
 
 void setup() {
-    configure_hw(g_player_state_persistent);
+    configure_hw(globals::player_state_persistent);
 
-    Serial.println("Start Health: " + String(g_player_state_persistent.health.health));
+    Serial.println("Start Health: " + String(globals::player_state_persistent.health.health));
 
     if (!is_monitor_enabled()) {
         Serial.println("Health Monitor disabled");
-        g_player_state_persistent = new_player_state();
+        globals::player_state_persistent = new_player_state();
     } else {
         // String representing our state (used by other devices to observe us)
-        auto const display_state = to_display_state(g_player_state_persistent.health.health);
+        auto const display_state = to_display_state(globals::player_state_persistent.health.health);
         Serial.println(display_state.c_str());
-        Serial.println("Health: " + String(g_player_state_persistent.health.health));
+        Serial.println("Health: " + String(globals::player_state_persistent.health.health));
         Serial.println("Cat Resistance: " +
-                       String(g_player_state_persistent.health.cat_resistance));
+                       String(globals::player_state_persistent.health.cat_resistance));
 
         // Start bluetooth to advertise our state
         BLEDevice::init(PREFIX_STR + display_state);
@@ -264,12 +263,12 @@ void setup() {
 
         // Run game update for all enqueued events
         game_update(
-            g_player_state_persistent,
+            globals::player_state_persistent,
             // get next event
             [&event_queue]() -> Event {
-                if (g_treament_received_interrupt_fired) {
+                if (globals::treament_received_interrupt_fired) {
                     event_queue.emplace_back(TreatmentEvent{});
-                    g_treament_received_interrupt_fired = false;
+                    globals::treament_received_interrupt_fired = false;
                 }
 
                 Event next_event;  // null state
@@ -298,7 +297,7 @@ void setup() {
     // Flush the serial buffer
     Serial.flush();
 
-    Serial.println("End Health: " + String(g_player_state_persistent.health.health));
+    Serial.println("End Health: " + String(globals::player_state_persistent.health.health));
 
     // Enable waking up in some amount of time and sleep
     // Tests confirm that random does not produce the same number after reset
