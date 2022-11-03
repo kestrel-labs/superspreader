@@ -239,7 +239,7 @@ void setup() {
 
     if (!is_monitor_enabled()) {
         Serial.println("Health Monitor disabled");
-        game_reset(g_player_state_persistent);
+        g_player_state_persistent = new_player_state();
     } else {
         // String representing our state (used by other devices to observe us)
         auto const display_state = to_display_state(g_player_state_persistent.health.health);

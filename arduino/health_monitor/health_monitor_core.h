@@ -139,7 +139,7 @@ HealthState exposure_update(HealthState health_state, ExposureEvent const exposu
 // updates health according to treatment rules
 HealthState treament_update(HealthState health_state);
 
-void game_reset(struct PlayerState& player);
+PlayerState new_player_state();
 
 template <typename GetNextEventT, typename OnExposureT, typename OnTreatmentT>
 void game_update(struct PlayerState& player,
