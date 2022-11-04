@@ -42,7 +42,7 @@ graph
 ```
 
 ### Persistent player state
-The persistent game state is stored in special hardware memory represented by a struct from the Player Engine.
+To conserve power, the system goes to deep sleep after processing events. To allow game state to persist, it is stored in special hardware memory (called RTC) and represented as a struct from the Player Engine.
 When the Hardware ticks the Game it sends the current player state.
 Then the Game calls functions from the Player Engine to transform the state based on the events it received from hardware.
 Once all messages are processed the persistent state is passed back to the hardware and the new state is stored in the special memory before sleep.
