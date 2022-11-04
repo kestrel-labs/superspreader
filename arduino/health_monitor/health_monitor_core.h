@@ -1,7 +1,6 @@
 // Defines core player update logic for health monitor device
 
-#ifndef HEALTH_MONITOR_CORE_H
-#define HEALTH_MONITOR_CORE_H
+#pragma once
 
 // C++ Standard Library
 #include <cmath>
@@ -246,5 +245,3 @@ void game_update(PlayerState& player,
             });
     }
 }
-
-#endif  // HEALTH_MONITOR_CORE_H
