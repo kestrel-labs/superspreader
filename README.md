@@ -29,8 +29,9 @@ sudo adduser $USER dialout
 
 ## Modules
 Communication between the Hardware and Game Event Loop modules is done via message queue.
-Hardware events are placed in the queue by the Hardware module then the Game is ticked, this causes the Game to process the events, using the Player Engine to update the state of the game and enqueues Game messages into a queue for the Hardware system to process (resulting in animations to confirm actions were taken).
-The Game Event Loop uses functions in the player engine to update the state of the game.
+Hardware events are placed in the queue by the Hardware module then the Game is ticked.
+The Game then processes the events, using the Player Engine to update the state of the game.
+The Player Engine also executes context dependent closures passed to it while processing events, such as playing animations or setting global state.
 ```mermaid
 graph
     A[Hardware] --> B[(Game Message Queue)]
