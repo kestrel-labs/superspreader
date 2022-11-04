@@ -68,6 +68,7 @@ RUN --mount=type=cache,target=/var/cache/apt,id=apt \
     && apt install -q -y --no-install-recommends \
     bash-completion \
     ccache \
+    doxygen \
     gdb \
     git \
     ssh-client \

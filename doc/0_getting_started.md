@@ -1,10 +1,4 @@
-# superspreader
-![ci badge](https://github.com/kestrel-labs/superspreader/actions/workflows/ci.yaml/badge.svg)
-[![Doxygen](https://github.com/kestrel-labs/superspreader/actions/workflows/doxygen.yaml/badge.svg?branch=main)](https://github.com/kestrel-labs/superspreader/actions/workflows/doxygen.yaml?query=branch%3Amain)
-[![license](https://img.shields.io/github/license/kestrel-labs/superspreader)](https://github.com/kestrel-labs/superspreader/blob/main/LICENSE)
-
-
-# Quickstart
+# Getting started
 ## Build
 Build a new development image
 ```shell
