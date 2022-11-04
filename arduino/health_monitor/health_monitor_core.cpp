@@ -5,6 +5,7 @@
 
 namespace {
 
+/** @returns amount to increase @p health_state value by, given @p exposures */
 health_t exposure_increase(HealthState const health_state, ExposureEvent const exposures) {
     if (is_immune(health_state.health) || is_infected(health_state.health)) return 0;
 
@@ -13,7 +14,7 @@ health_t exposure_increase(HealthState const health_state, ExposureEvent const e
            exposures.cat * to_health(InfectionRate::CAT) * (health_state.cat_resistance ? 0 : 1);
 }
 
-// Checks health status, returns a 0 or constant value to increment h by to track disease progress
+/** @returns amount to increase @p health by, given current progression */
 health_t time_increase(health_t health) {
     if (is_super_healthy(health)) {
         auto const sum       = health + to_health(ProgressRate::SUPER_HEALTHY);
@@ -25,7 +26,7 @@ health_t time_increase(health_t health) {
     return 0;
 }
 
-// Checks health status, returns a 0 or constant value to decrement h by to track disease progress
+/** @returns amount to decrease @p health by, given current progression */
 health_t time_decrease(health_t health) {
     if (is_healthy(health)) {
         // Preview the result
@@ -41,9 +42,11 @@ health_t time_decrease(health_t health) {
 HealthState exposure_update(HealthState health_state, ExposureEvent const exposures) {
     if (is_zombie(health_state.health)) {
         health_state.health = to_health(StateBounds::ZOMBIE);
+        return health_state;
     }
     if (is_immune(health_state.health)) {
         health_state.health = to_health(StateBounds::IMMUNE);
+        return health_state;
     }
     health_state.health = health_state.health + time_increase(health_state.health) -
                           time_decrease(health_state.health) +
@@ -52,6 +55,7 @@ HealthState exposure_update(HealthState health_state, ExposureEvent const exposu
     health_state.cat_resistance |= is_infected(health_state.health);
     if (is_zombie(health_state.health)) {
         health_state.health = to_health(StateBounds::ZOMBIE);
+        return health_state;
     }
     return health_state;
 }

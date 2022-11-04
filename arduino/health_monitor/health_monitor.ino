@@ -281,13 +281,9 @@ void setup() {
                 return next_event;
             },
             // on exposure
-            [](ExposureEvent const& exposure) {
-                (void)exposure;
-                Serial.println("Player exposed to virus");
-            },
+            [](ExposureEvent const&) { Serial.println("Player exposed to virus"); },
             // on treatment
-            [](TreatmentEvent const& treatment) {
-                (void)treatment;
+            [](TreatmentEvent const&) {
                 Serial.println("Player administered treatment");
 
                 // Do some beep boops
