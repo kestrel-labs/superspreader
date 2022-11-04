@@ -30,7 +30,7 @@ class static_ring_buffer {
 
     constexpr ValueT& front() { return *rd_p_; }
 
-    constexpr void pop_front() {
+    void pop_front() {
         rd_p_->~ValueT();
         ++rd_p_;
         if (rd_p_ == (reinterpret_cast<ValueT*>(buffer_) + N)) {
