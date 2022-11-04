@@ -21,6 +21,9 @@ RUN --mount=type=cache,target=/var/cache/apt,id=apt \
     python3-tk \
     && rm -rf /var/lib/apt/lists/*
 
+# Install Rust
+RUN curl https://sh.rustup.rs -sSf | bash -s -- -y
+
 RUN python3 -m pip install --upgrade pip setuptools \
     && python3 -m pip install pyserial
 
@@ -40,9 +43,16 @@ FROM upstream AS deployment
 # this doesn't currently build binaries for deployment but does check that
 # everything will build together
 WORKDIR /ws
+COPY . .
 # build arduino code
-COPY ./arduino .
-RUN arduino-cli compile --fqbn esp32:esp32:esp32 health_monitor
+RUN arduino-cli compile --fqbn esp32:esp32:esp32 arduino/health_monitor
+
+# build, format, and test rust code
+WORKDIR /ws/ss-sim
+ENV PATH="/root/.cargo/bin:${PATH}"
+RUN cargo build
+RUN cargo fmt --check
+RUN cargo test
 
 FROM upstream AS linting
 RUN python3 -m pip install --upgrade pip setuptools \
@@ -84,6 +94,9 @@ RUN groupadd --gid ${GID} ${USER} \
 WORKDIR /home/${USER}/ws
 RUN chown -R ${UID}:${GID} /home/${USER}
 USER ${USER}
+
+# Add rust to the path
+ENV PATH="/root/.cargo/bin:${PATH}"
 
 RUN arduino-cli config init \
     && arduino-cli config add board_manager.additional_urls https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json \
