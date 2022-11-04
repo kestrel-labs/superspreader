@@ -142,7 +142,7 @@ HealthState treament_update(HealthState health_state);
 PlayerState new_player_state();
 
 template <typename GetNextEventT, typename OnExposureT, typename OnTreatmentT>
-void game_update(struct PlayerState& player,
+void game_update(PlayerState& player,
                  GetNextEventT get_next_event,
                  OnExposureT on_exposure,
                  OnTreatmentT on_treatment) {

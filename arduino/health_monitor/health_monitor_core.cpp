@@ -41,9 +41,11 @@ health_t time_decrease(health_t health) {
 HealthState exposure_update(HealthState health_state, ExposureEvent const exposures) {
     if (is_zombie(health_state.health)) {
         health_state.health = to_health(StateBounds::ZOMBIE);
+        return health_state;
     }
     if (is_immune(health_state.health)) {
         health_state.health = to_health(StateBounds::IMMUNE);
+        return health_state;
     }
     health_state.health = health_state.health + time_increase(health_state.health) -
                           time_decrease(health_state.health) +
@@ -52,6 +54,7 @@ HealthState exposure_update(HealthState health_state, ExposureEvent const exposu
     health_state.cat_resistance |= is_infected(health_state.health);
     if (is_zombie(health_state.health)) {
         health_state.health = to_health(StateBounds::ZOMBIE);
+        return health_state;
     }
     return health_state;
 }
