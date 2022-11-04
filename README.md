@@ -25,3 +25,57 @@ sudo chmod 666 /dev/ttyUSB0
 sudo chown $USER /dev/ttyUSB0
 sudo adduser $USER dialout
 ```
+# System Design
+
+## Modules
+Communication between the Hardware and Game Event Loop modules is done via message queue.
+Hardware events are placed in the queue by the Hardware module then the Game is ticked.
+The Game then processes the events, using the Player Engine to update the state of the game.
+The Player Engine also executes context dependent closures passed to it while processing events, such as playing animations or setting global state.
+```mermaid
+graph
+    A[Hardware] --> B[(Game Message Queue)]
+    B --> C[Game Event Loop]
+    C --> D[(Hardware Message Queue)]
+    D --> A
+    C -..-> E[Player Engine]
+```
+
+### Persistent player state
+To conserve power, the system goes to deep sleep after processing events. To allow game state to persist, it is stored in special hardware memory (called RTC) and represented as a struct from the Player Engine.
+When the Hardware ticks the Game it sends the current player state.
+Then the Game calls functions from the Player Engine to transform the state based on the events it received from hardware.
+Once all messages are processed the persistent state is passed back to the hardware and the new state is stored in RTC memory before sleep.
+
+### Hardware Module
+The hardware subsystem performs these steps on each wake-up:
+```mermaid
+graph TD
+    A(Wakeup) -->B[Scan Bluetooth]
+    B --> C[(Exposure Hw Msg)]
+    C --> D{Treatment?}
+    D -->|Yes| E[(Treatment Hw Msg)]
+    E --> F
+    D -->|No| F[Tick Game]
+    F --> Z{Game Msgs?}
+    Z -->|Yes| G[Animate Game Msgs]
+    G --> H(Sleep)
+    Z -->|No| H
+```
+
+### Game Module
+The Game event loop processes the messages placed in the queue from the hardware on each tick.
+```mermaid
+graph TD
+    A(Tick) -->B{Pop Hw Msg}
+    B ------->|None| Z(Return)
+    B --->|Treatment| E[Process Treatment]
+    E ---> C[(Treatment Game Msg)]
+    C --> B
+    B -->|Exposure| G[Process Exposure]
+    G ---> J[(Exposure Game Msg)]
+    J --> B
+```
+
+### Player Engine
+The player engine provides functions that transform the state based on events and the current state.
