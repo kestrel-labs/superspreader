@@ -8,12 +8,11 @@ namespace globals {
 
 //// Persistent State ///////////////////////////////////////////////////
 
-// TODO: DO NOT MERGE: as is the state is not persistent!!!
 RTC_DATA_ATTR PlayerState player_state_persistent;
 
 //// Temporary State ////////////////////////////////////////////////////
 
-bool treament_received_interrupt_fired = false;
+RTC_DATA_ATTR bool treatment_received_interrupt_fired = false;
 
 }  // namespace globals
 
@@ -33,8 +32,9 @@ constexpr auto A_SYMPTOMATIC_STR = "Asymptomatic";
 constexpr auto SICK_STR          = "Sick";
 constexpr auto ZOMBIE_STR        = "Zombie";
 
-constexpr auto green_led_pin = 16;
-constexpr auto red_led_pin   = 17;
+constexpr auto blue_led_pin  = 27;
+constexpr auto green_led_pin = 14;
+constexpr auto red_led_pin   = 12;
 constexpr auto treatment_pin = GPIO_NUM_4;
 
 bool is_monitor(std::string const& name) { return name.rfind(PREFIX_STR, 0) == 0; }
@@ -116,7 +116,7 @@ std::string to_display_state(health_t health) {
 }
 
 void IRAM_ATTR receive_treatment() {
-    globals::treament_received_interrupt_fired = true;
+    globals::treatment_received_interrupt_fired = true;
     // treatment can only happen once per wakeup
     detachInterrupt(treatment_pin);
 }
@@ -143,6 +143,8 @@ void configure_led_timer(uint64_t period_us) {
 }
 
 void configure_hw(const struct PlayerState& player) {
+    pinMode(blue_led_pin, OUTPUT);
+    digitalWrite(blue_led_pin, HIGH);
     pinMode(green_led_pin, OUTPUT);
     pinMode(red_led_pin, OUTPUT);
     pinMode(treatment_pin, INPUT);
@@ -213,19 +215,15 @@ void show_treatment_animation() {
     // Two slow blinks
     for (int n = 0; n < 2; ++n) {
         digitalWrite(green_led_pin, HIGH);
-        digitalWrite(red_led_pin, HIGH);
         delay(1000);
         digitalWrite(green_led_pin, LOW);
-        digitalWrite(red_led_pin, LOW);
         delay(1000);
     }
     // Eight fast blinks
     for (int n = 0; n < 8; ++n) {
         digitalWrite(green_led_pin, HIGH);
-        digitalWrite(red_led_pin, HIGH);
         delay(100);
         digitalWrite(green_led_pin, LOW);
-        digitalWrite(red_led_pin, LOW);
         delay(100);
     }
 }
@@ -260,9 +258,9 @@ void setup() {
         globals::player_state_persistent,
         // get next event
         [&event_queue]() -> Event {
-            if (globals::treament_received_interrupt_fired) {
+            if (globals::treatment_received_interrupt_fired) {
                 event_queue.emplace_back(TreatmentEvent{});
-                globals::treament_received_interrupt_fired = false;
+                globals::treatment_received_interrupt_fired = false;
             }
 
             Event next_event;  // null state
