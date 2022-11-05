@@ -17,7 +17,7 @@ class static_ring_buffer {
         }
     }
 
-    constexpr bool empty() const { wr_p_ == rd_p_; }
+    constexpr bool empty() const { return wr_p_ == rd_p_; }
 
     template <typename... Args>
     void emplace_back(Args&&... args) {

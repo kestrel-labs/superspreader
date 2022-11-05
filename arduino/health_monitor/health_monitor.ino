@@ -275,7 +275,7 @@ void setup() {
                 Event next_event;  // null state
                 if (!event_queue.empty()) {
                     next_event = event_queue.front();
-                    event_queue.front();
+                    event_queue.pop_front();
                 }
 
                 return next_event;
