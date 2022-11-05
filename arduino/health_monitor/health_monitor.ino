@@ -8,6 +8,7 @@ namespace globals {
 
 //// Persistent State ///////////////////////////////////////////////////
 
+// TODO: DO NOT MERGE: as is the state is not persistent!!!
 RTC_DATA_ATTR PlayerState player_state_persistent;
 
 //// Temporary State ////////////////////////////////////////////////////
@@ -34,7 +35,6 @@ constexpr auto ZOMBIE_STR        = "Zombie";
 
 constexpr auto green_led_pin = 16;
 constexpr auto red_led_pin   = 17;
-constexpr auto enable_pin    = 18;
 constexpr auto treatment_pin = GPIO_NUM_4;
 
 bool is_monitor(std::string const& name) { return name.rfind(PREFIX_STR, 0) == 0; }
@@ -143,7 +143,6 @@ void configure_led_timer(uint64_t period_us) {
 }
 
 void configure_hw(const struct PlayerState& player) {
-    pinMode(enable_pin, INPUT);
     pinMode(green_led_pin, OUTPUT);
     pinMode(red_led_pin, OUTPUT);
     pinMode(treatment_pin, INPUT);
@@ -161,8 +160,6 @@ void configure_hw(const struct PlayerState& player) {
     // start serial
     Serial.begin(115200);
 }
-
-bool is_monitor_enabled() { return !digitalRead(enable_pin); }
 
 template <std::size_t N>
 void poll_wakeup_events(static_ring_buffer<Event, N>& event_queue) {
@@ -238,58 +235,53 @@ void setup() {
 
     Serial.println("Start Health: " + String(globals::player_state_persistent.health.health));
 
-    if (!is_monitor_enabled()) {
-        Serial.println("Health Monitor disabled");
-        globals::player_state_persistent = new_player_state();
-    } else {
-        // String representing our state (used by other devices to observe us)
-        auto const display_state = to_display_state(globals::player_state_persistent.health.health);
-        Serial.println(display_state.c_str());
-        Serial.println("Health: " + String(globals::player_state_persistent.health.health));
-        Serial.println("Cat Resistance: " +
-                       String(globals::player_state_persistent.health.cat_resistance));
+    // String representing our state (used by other devices to observe us)
+    auto const display_state = to_display_state(globals::player_state_persistent.health.health);
+    Serial.println(display_state.c_str());
+    Serial.println("Health: " + String(globals::player_state_persistent.health.health));
+    Serial.println("Cat Resistance: " +
+                   String(globals::player_state_persistent.health.cat_resistance));
 
-        // Start bluetooth to advertise our state
-        BLEDevice::init(PREFIX_STR + display_state);
-        BLEDevice::startAdvertising();
+    // Start bluetooth to advertise our state
+    BLEDevice::init(PREFIX_STR + display_state);
+    BLEDevice::startAdvertising();
 
-        // Event queue will hold semi-dynamic events to process on this tick
-        static_ring_buffer<Event, 4> event_queue;
+    // Event queue will hold semi-dynamic events to process on this tick
+    static_ring_buffer<Event, 4> event_queue;
 
-        // Get any events caused by device wakeup events
-        poll_wakeup_events(event_queue);
+    // Get any events caused by device wakeup events
+    poll_wakeup_events(event_queue);
 
-        // Get any events from BT scan
-        poll_bt_events(event_queue);
+    // Get any events from BT scan
+    poll_bt_events(event_queue);
 
-        // Run game update for all enqueued events
-        game_update(
-            globals::player_state_persistent,
-            // get next event
-            [&event_queue]() -> Event {
-                if (globals::treament_received_interrupt_fired) {
-                    event_queue.emplace_back(TreatmentEvent{});
-                    globals::treament_received_interrupt_fired = false;
-                }
+    // Run game update for all enqueued events
+    game_update(
+        globals::player_state_persistent,
+        // get next event
+        [&event_queue]() -> Event {
+            if (globals::treament_received_interrupt_fired) {
+                event_queue.emplace_back(TreatmentEvent{});
+                globals::treament_received_interrupt_fired = false;
+            }
 
-                Event next_event;  // null state
-                if (!event_queue.empty()) {
-                    next_event = event_queue.front();
-                    event_queue.pop_front();
-                }
+            Event next_event;  // null state
+            if (!event_queue.empty()) {
+                next_event = event_queue.front();
+                event_queue.pop_front();
+            }
 
-                return next_event;
-            },
-            // on exposure
-            [](ExposureEvent const&) { Serial.println("Player exposed to virus"); },
-            // on treatment
-            [](TreatmentEvent const&) {
-                Serial.println("Player administered treatment");
+            return next_event;
+        },
+        // on exposure
+        [](ExposureEvent const&) { Serial.println("Player exposed to virus"); },
+        // on treatment
+        [](TreatmentEvent const&) {
+            Serial.println("Player administered treatment");
 
-                // Do some beep boops
-                show_treatment_animation();
-            });
-    }
+            // Do some beep boops
+            show_treatment_animation();
+        });
 
     // Flush the serial buffer
     Serial.flush();
