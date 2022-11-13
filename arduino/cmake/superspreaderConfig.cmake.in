@@ -1,4 +1,0 @@
-Name: ${PROJECT_NAME}
-Description: Code for the game: "Super Spreader"
-Version: ${PROJECT_VERSION}
-Cflags: -I${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}
