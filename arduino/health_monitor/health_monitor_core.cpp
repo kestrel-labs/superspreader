@@ -77,7 +77,7 @@ HealthState treament_update(HealthState health_state) {
 PlayerState new_player_state() {
     PlayerState player;
     player.tick                  = 0;
-    player.health.health         = 2;
+    player.health.health         = to_health(StateBounds::SUPER_HEALTHY);
     player.health.cat_resistance = false;
     return player;
 }
