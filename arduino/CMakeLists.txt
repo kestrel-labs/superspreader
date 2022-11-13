@@ -18,7 +18,6 @@ endif()
 
 # Use O3 on Release mode
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
-set(CMAKE_INSTALL_PREFIX ${PROJECT_SOURCE_DIR})
 
 add_library(
   "${PROJECT_NAME}_health_monitor"
@@ -30,7 +29,6 @@ target_include_directories(
   "${PROJECT_NAME}_health_monitor"
   PUBLIC
   $<BUILD_INTERFACE:${${PROJECT_NAME}_SOURCE_DIR}/health_monitor>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 
 #############################################################################
