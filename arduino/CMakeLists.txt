@@ -13,8 +13,13 @@ project(
 
 include(GNUInstallDirs)
 
-set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -O3")
+# Default to Release build type
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Release)
+endif()
+
+# Use O3 on Release mode
+set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 set(CMAKE_INSTALL_PREFIX ${PROJECT_SOURCE_DIR})
 
 add_library(
