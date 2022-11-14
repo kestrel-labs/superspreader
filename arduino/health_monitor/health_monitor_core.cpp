@@ -19,7 +19,8 @@ health_t time_increase(health_t health) {
     if (is_super_healthy(health)) {
         auto const sum       = health + to_health(ProgressRate::SUPER_HEALTHY);
         auto const remainder = sum % to_health(StateBounds::HEALTHY);
-        auto const quotient  = std::floor(sum / to_health(StateBounds::HEALTHY));
+        auto const quotient =
+            static_cast<health_t>(std::floor(sum / to_health(StateBounds::HEALTHY)));
         return to_health(ProgressRate::SUPER_HEALTHY) - remainder * quotient;
     }
     if (is_infected(health)) return to_health(ProgressRate::INFECTED);

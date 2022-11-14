@@ -6,11 +6,11 @@ services:
       args:
         UID: ${UID:-1000}
         GID: ${GID:-${UID:-1000}}
-        USER: ${USER:-dev}
-      context: .
+        USER: dev
+      context: ../
       dockerfile: Dockerfile
-    command: bash -c "bash"
-    container_name: ${USER}-superspreader-dev
+    command: sleep infinity
+    container_name: superspreader-dev
     environment:
       - DISPLAY=${DISPLAY}
       - QT_X11_NO_MITSHM=1
@@ -23,13 +23,11 @@ services:
     network_mode: host
     privileged: true
     volumes:
-      - ${PWD}:${HOME}/superspreader
-      - ~/.ssh:${HOME}/.ssh:ro
+      - ${PWD}:/home/dev/superspreader
+      - ~/.ssh:/home/dev/.ssh:ro
       - ~/.gitconfig:${HOME}/.gitconfig:ro
       - /dev:/dev
       - /tmp/.X11-unix:/tmp/.X11-unix:ro
       - ${XDG_RUNTIME_DIR}:${XDG_RUNTIME_DIR}:ro
-      - /etc/passwd:/etc/passwd:ro
-      - /etc/shadow:/etc/shadow:ro
       - ${SSH_AUTH_SOCK}:${SSH_AUTH_SOCK}
     working_dir: ${HOME}/superspreader

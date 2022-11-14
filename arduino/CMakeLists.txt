@@ -1,15 +1,15 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.22.1)
 
 project(
   "superspreader"
   VERSION 1.0.0
   DESCRIPTION "Code for the game: \"Super Spreader\""
+  LANGUAGES CXX
 )
 
-
-#############################################################################
-# Super Spreader Libraries
-#############################################################################
+if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
+    add_compile_options(-Werror -Wall -Wextra -Wconversion -Wold-style-cast)
+endif()
 
 # Default to Release build type
 if(NOT CMAKE_BUILD_TYPE)
@@ -19,23 +19,24 @@ endif()
 # Use O3 on Release mode
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
-add_library(
-  "${PROJECT_NAME}_health_monitor"
-  "${PROJECT_SOURCE_DIR}/health_monitor/health_monitor_core.cpp")
+#############################################################################
+# Super Spreader Libraries
+#############################################################################
 
-target_compile_features("${PROJECT_NAME}_health_monitor" PUBLIC cxx_std_14)
-
-target_include_directories(
-  "${PROJECT_NAME}_health_monitor"
-  PUBLIC
-  $<BUILD_INTERFACE:${${PROJECT_NAME}_SOURCE_DIR}/health_monitor>
+add_library(superspreader_health_monitor
+  health_monitor/health_monitor_core.cpp
+)
+target_compile_features(superspreader_health_monitor PUBLIC cxx_std_14)
+target_include_directories(superspreader_health_monitor PUBLIC
+  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/health_monitor>
 )
 
 #############################################################################
 # Testing
 #############################################################################
 
-if(BUILD_TESTS)
+include(CTest)
+if(BUILD_TESTING)
     enable_testing()
 
     # Download and unpack googletest at configure time

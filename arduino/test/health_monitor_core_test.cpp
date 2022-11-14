@@ -176,12 +176,8 @@ TEST(HealthMonitorCoreTests, SingleExposureEvent) {
                 return Event{};
             }
         },
-        [&exposure_events_handled](ExposureEvent const& exposure_event) {
-            ++exposure_events_handled;
-        },
-        [&treament_events_handled](TreatmentEvent const& exposure_event) {
-            ++treament_events_handled;
-        });
+        [&exposure_events_handled](ExposureEvent const&) { ++exposure_events_handled; },
+        [&treament_events_handled](TreatmentEvent const&) { ++treament_events_handled; });
 
     ASSERT_EQ(exposure_events_handled, 1);
     ASSERT_EQ(treament_events_handled, 0);
@@ -212,12 +208,8 @@ TEST(HealthMonitorCoreTests, SingleExposureEventThenSingleTreatmentEvent) {
                 return Event{};
             }
         },
-        [&exposure_events_handled](ExposureEvent const& exposure_event) {
-            ++exposure_events_handled;
-        },
-        [&treament_events_handled](TreatmentEvent const& exposure_event) {
-            ++treament_events_handled;
-        });
+        [&exposure_events_handled](ExposureEvent const&) { ++exposure_events_handled; },
+        [&treament_events_handled](TreatmentEvent const&) { ++treament_events_handled; });
 
     ASSERT_EQ(exposure_events_handled, 1);
     ASSERT_EQ(treament_events_handled, 1);
@@ -244,12 +236,8 @@ TEST(HealthMonitorCoreTests, ManyExposureEventsToZombie) {
                 return Event{};
             }
         },
-        [&exposure_events_handled](ExposureEvent const& exposure_event) {
-            ++exposure_events_handled;
-        },
-        [&treament_events_handled](TreatmentEvent const& exposure_event) {
-            ++treament_events_handled;
-        });
+        [&exposure_events_handled](ExposureEvent const&) { ++exposure_events_handled; },
+        [&treament_events_handled](TreatmentEvent const&) { ++treament_events_handled; });
 
     ASSERT_EQ(exposure_events_handled, 49);
     ASSERT_EQ(treament_events_handled, 0);
