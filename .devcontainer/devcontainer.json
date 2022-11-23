@@ -1,0 +1,27 @@
+{
+  "name": "Docker Compose",
+  "dockerComposeFile": [
+    "docker-compose.yml"
+  ],
+  "remoteEnv": {
+    "LOCAL_WORKSPACE_FOLDER": "${localWorkspaceFolder}"
+  },
+  "service": "development",
+  "remoteUser": "dev",
+  "workspaceFolder": "/home/dev/superspreader",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-azuretools.vscode-docker",
+        "vadimcn.vscode-lldb",
+        "ms-vscode.cpptools-extension-pack",
+        "elagil.pre-commit-helper"
+      ]
+    }
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {
+      "version": "latest"
+    }
+  }
+}
