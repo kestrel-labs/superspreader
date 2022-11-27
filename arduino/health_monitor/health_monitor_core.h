@@ -44,7 +44,7 @@ enum struct ProgressRate : health_t {
  * @brief Rate of health progression per exposure type
  */
 enum struct InfectionRate : health_t {
-    CAT   = 8,
+    CAT   = 16,
     HUMAN = 3,
 };
 
