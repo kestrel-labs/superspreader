@@ -237,8 +237,6 @@ void setup() {
     auto const display_state = to_display_state(globals::player_state_persistent.health.health);
     Serial.println(display_state.c_str());
     Serial.println("Health: " + String(globals::player_state_persistent.health.health));
-    Serial.println("Cat Resistance: " +
-                   String(globals::player_state_persistent.health.cat_resistance));
 
     // Start bluetooth to advertise our state
     BLEDevice::init(PREFIX_STR + display_state);

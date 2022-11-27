@@ -104,9 +104,6 @@ struct HealthState {
      *       then the value after every boot on RTC memory
      */
     health_t health = 2;  // super healthy
-
-    /** @brief True if susceptible to infection from zootropic exposure */
-    bool cat_resistance = false;
 };
 
 /** @brief Contains health and game state */
