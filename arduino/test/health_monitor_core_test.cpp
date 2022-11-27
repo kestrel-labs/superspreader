@@ -64,6 +64,33 @@ TEST(ExposureUpdateTests, NoExposureCausesNoChange) {
     EXPECT_EQ(next_health.health, to_health(StateBounds::HEALTHY));
 }
 
+TEST(ExposureUpdateTests, NoExposureHealthyDecay) {
+    const HealthState init_health{.health         = to_health(StateBounds::HEALTHY) + 5,
+                                  .cat_resistance = false};
+    auto const next_health = exposure_update(init_health,
+                                             ExposureEvent{
+                                                 .human = 0,
+                                                 .cat   = 0,
+                                             });
+    ASSERT_LT(next_health.health, init_health.health);
+    ASSERT_EQ(next_health.cat_resistance, init_health.cat_resistance);
+    EXPECT_GT(next_health.health, to_health(StateBounds::HEALTHY));
+}
+
+TEST(ExposureUpdateTests, NoExposureSuperHealthyDecay) {
+    const HealthState init_health{.health         = to_health(StateBounds::SUPER_HEALTHY),
+                                  .cat_resistance = false};
+    auto const next_health = exposure_update(init_health,
+                                             ExposureEvent{
+                                                 .human = 0,
+                                                 .cat   = 0,
+                                             });
+    ASSERT_GT(next_health.health, init_health.health);
+    ASSERT_EQ(next_health.cat_resistance, init_health.cat_resistance);
+    EXPECT_GT(next_health.health, to_health(StateBounds::SUPER_HEALTHY));
+    EXPECT_LT(next_health.health, to_health(StateBounds::HEALTHY));
+}
+
 TEST(ExposureUpdateTests, ConsistentExposureCausesInfection) {
     HealthState curr_health{.health = to_health(StateBounds::HEALTHY), .cat_resistance = false};
 
