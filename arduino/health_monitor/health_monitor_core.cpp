@@ -9,9 +9,8 @@ namespace {
 health_t exposure_increase(HealthState const health_state, ExposureEvent const exposures) {
     if (is_immune(health_state.health) || is_infected(health_state.health)) return 0;
 
-    // resistant to cats when cat_resistance = 1
     return exposures.human * to_health(InfectionRate::HUMAN) +
-           exposures.cat * to_health(InfectionRate::CAT) * (health_state.cat_resistance ? 0 : 1);
+           exposures.cat * to_health(InfectionRate::CAT);
 }
 
 /** @returns amount to increase @p health by, given current progression */
@@ -51,8 +50,6 @@ HealthState exposure_update(HealthState health_state, ExposureEvent const exposu
     health_state.health = health_state.health + time_increase(health_state.health) -
                           time_decrease(health_state.health) +
                           exposure_increase(health_state, exposures);
-    // Cat resistance is permanent
-    health_state.cat_resistance |= is_infected(health_state.health);
     if (is_zombie(health_state.health)) {
         health_state.health = to_health(StateBounds::ZOMBIE);
         return health_state;
@@ -76,8 +73,7 @@ HealthState treament_update(HealthState health_state) {
 
 PlayerState new_player_state() {
     PlayerState player;
-    player.tick                  = 0;
-    player.health.health         = 2;
-    player.health.cat_resistance = false;
+    player.tick          = 0;
+    player.health.health = 2;
     return player;
 }
