@@ -9,7 +9,6 @@ namespace {
 health_t exposure_increase(HealthState const health_state, ExposureEvent const exposures) {
     if (is_immune(health_state.health) || is_infected(health_state.health)) return 0;
 
-    // resistant to cats when cat_resistance = 1
     return exposures.human * to_health(InfectionRate::HUMAN) +
            exposures.cat * to_health(InfectionRate::CAT);
 }
