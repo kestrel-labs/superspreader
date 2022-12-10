@@ -1,8 +1,8 @@
 #pragma once
 
 #include <cstdint>
-#include <utility>
 #include <stdexcept>
+#include <utility>
 
 template <typename ValueT, std::size_t N, bool SafeMode = true>
 class static_ring_buffer {
@@ -10,7 +10,9 @@ class static_ring_buffer {
 
    public:
     static_ring_buffer()
-        : wr_p_{reinterpret_cast<ValueT*>(buffer_)}, rd_p_{reinterpret_cast<ValueT*>(buffer_)}, size_{0} {}
+        : wr_p_{reinterpret_cast<ValueT*>(buffer_)},
+          rd_p_{reinterpret_cast<ValueT*>(buffer_)},
+          size_{0} {}
 
     ~static_ring_buffer() {
         while (!empty()) {
